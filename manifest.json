@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Qontextualize",
+  "version": "1.0",
+  "description": "A Chrome extension that works only on YouTube videos.",
+  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "host_permissions": ["https://www.youtube.com/watch?v=*"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "web_accessible_resources": [{
+    "resources": ["transcript.html", "transcript.js"],
+    "matches": ["<all_urls>"]
+  }],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/watch?v=*"],
+      "js": ["content.js"]
+    }
+  ]
+}

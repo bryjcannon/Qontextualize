@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Transcript Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #0066ff;
+        }
+        .transcript-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .segment {
+            margin-bottom: 15px;
+            display: flex;
+        }
+        .timestamp {
+            color: #666;
+            min-width: 100px;
+            margin-right: 15px;
+        }
+        .text {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 id="video-title">Loading transcript...</h1>
+    </div>
+    <div class="transcript-container" id="transcript-content">
+    </div>
+    <script src="transcript.js"></script>
+</body>
+</html>
