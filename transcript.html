@@ -7,46 +7,106 @@
     <style>
         body {
             font-family: 'Montserrat', sans-serif;
-            max-width: 800px;
-            margin: 20px auto;
+            max-width: 900px;
+            margin: 40px auto;
             padding: 20px;
-            background-color: #000000;
+            background-color: #1a1a1a;
             color: #ffffff;
+            line-height: 1.6;
         }
         .logo {
-            display: inline-block;
-            padding: 8px 20px;
-            margin-bottom: 15px;
-            background: linear-gradient(to bottom, #590b0b, #e165c4);
-            border-radius: 6px;
-            box-shadow: 
-                inset 0 2px 2px rgba(255,255,255,0.3),
-                inset 0 -2px 2px rgba(0,0,0,0.3),
-                0 2px 4px rgba(0,0,0,0.2);
-            font-family: 'Montserrat', sans-serif;
-            font-size: 24px;
-            font-weight: bold;
-            color: white;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-            transform: perspective(100px) rotateX(2deg);
+            display: none; /* Hide the logo as per reference design */
         }
         .header {
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #4B0082;
+            margin-bottom: 40px;
         }
-        .summary-container {
-            background-color: #1a1a1a;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+        .analysis-container {
+            background-color: transparent;
+            margin-bottom: 40px;
+        }
+
+        .claim-section {
+            border-bottom: 1px solid #333;
+            padding: 30px 0;
+            margin-bottom: 30px;
+        }
+
+        .claim-section:last-child {
+            border-bottom: none;
+        }
+
+        .claim-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .confidence {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .confidence.high {
+            background-color: #1a472a;
+            color: #2ecc71;
+        }
+
+        .confidence.medium {
+            background-color: #7d5d1a;
+            color: #f1c40f;
+        }
+
+        .confidence.low {
+            background-color: #641e16;
+            color: #e74c3c;
+        }
+
+        .timestamp {
+            color: #666;
+            font-family: monospace;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        .sources {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #333;
+        }
+
+        .sources a {
+            color: #3498db;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 15px;
+            font-size: 14px;
+        }
+
+        .sources a:hover {
+            text-decoration: underline;
         }
         
-        .summary-text {
-            font-size: 18px;
+        .analysis-text {
+            font-size: 16px;
             line-height: 1.8;
             color: #e0e0e0;
+        }
+
+        h3 {
+            color: #ffffff;
+            margin: 0 0 20px 0;
+            font-size: 24px;
+            font-weight: 500;
+        }
+
+        h2 {
+            color: #ffffff;
+            margin: 0 0 40px 0;
+            font-size: 24px;
+            font-weight: 500;
         }
         
         h2 {
@@ -59,14 +119,14 @@
 </head>
 <body>
     <div class="header">
-        <div class="logo">Qontext</div>
         <h1 id="video-title">Loading transcript...</h1>
     </div>
-    <div class="summary-container">
-        <h2>Summary</h2>
-        <div id="summary-content" class="summary-text">
-            <p>Generating summary...</p>
-        </div>
+    <div id="video-summary" class="video-summary">
+        Loading video summary...
+    </div>
+    <h2>Strong Claims and Their Evaluation</h2>
+    <div id="analysis-content">
+        <p>Analyzing claims...</p>
     </div>
 
     <script type="module" src="transcript.js"></script>

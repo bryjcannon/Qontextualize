@@ -49,7 +49,7 @@ async function extractTranscript() {
         });
 
         const storageKey = `transcript_${videoId}`;
-        const summaryKey = `summary_${videoId}`;
+        const analysisKey = `analysis_${videoId}`;
 
         // Format transcript for summarization
         const fullText = transcriptData.map(segment => segment.text).join(' ');
@@ -62,7 +62,8 @@ async function extractTranscript() {
                 timestamp: Date.now(),
                 segments: transcriptData,
                 fullText
-            }
+            },
+            [analysisKey]: null // Reset analysis when new transcript is extracted
         });
 
         // Send success message back to popup
@@ -72,7 +73,7 @@ async function extractTranscript() {
             videoTitle,
             videoId,
             storageKey,
-            summaryKey
+            analysisKey
         });
     } catch (error) {
         console.error('Error extracting transcript:', error);

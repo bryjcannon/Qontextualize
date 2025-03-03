@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
                 // Open transcript viewer in new tab with both keys
                 const viewerURL = chrome.runtime.getURL('transcript.html') + 
-                    `?transcriptKey=${message.storageKey}&summaryKey=${message.summaryKey}`;
+                    `?transcriptKey=${message.storageKey}&analysisKey=${message.analysisKey}`;
                 chrome.tabs.create({ url: viewerURL });
             }
             

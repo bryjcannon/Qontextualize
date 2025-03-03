@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import path from 'path';
+import { generateFinalReport } from '../video_claim_analysis.js';
 
 // Load environment variables
 dotenv.config();
@@ -26,11 +27,11 @@ app.use(cors({
     methods: ['POST'],
     allowedHeaders: ['Content-Type']
 }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.use(limiter);
 
-// OpenAI proxy endpoint
-app.post('/api/summarize', async (req, res) => {
+// Claim analysis endpoint
+app.post('/api/analyze', async (req, res) => {
     try {
         const { transcript } = req.body;
         
@@ -38,39 +39,18 @@ app.post('/api/summarize', async (req, res) => {
             return res.status(400).json({ error: 'Transcript is required' });
         }
 
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-            },
-            body: JSON.stringify({
-                model: 'gpt-4-0125-preview',
-                messages: [
-                    {
-                        role: "system",
-                        content: "You are a helpful assistant that creates concise summaries of video transcripts. Focus on the main points and key takeaways."
-                    },
-                    {
-                        role: "user",
-                        content: `Please summarize the following video transcript:\n\n${transcript}`
-                    }
-                ],
-                max_tokens: 500,
-                temperature: 0.7
-            })
-        });
+        console.log('Analyzing transcript...');
+        const report = await generateFinalReport(transcript);
+        console.log('Analysis complete');
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error?.message || 'OpenAI API request failed');
-        }
-
-        const data = await response.json();
-        res.json({ summary: data.choices[0].message.content });
+        res.json(report);
     } catch (error) {
         console.error('Error:', error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message,
+            claims: [],
+            markdown: `Error analyzing transcript: ${error.message}`
+        });
     }
 });
 
@@ -82,4 +62,5 @@ app.get('/health', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+console.log('Claim analysis service ready');
 });
