@@ -33,8 +33,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 statusText.classList.add('success');
                 downloadBtn.disabled = false;
 
-                // Open transcript viewer in new tab
-                const viewerURL = chrome.runtime.getURL('transcript.html') + '?key=' + message.storageKey;
+                // Open transcript viewer in new tab with both keys
+                const viewerURL = chrome.runtime.getURL('transcript.html') + 
+                    `?transcriptKey=${message.storageKey}&summaryKey=${message.summaryKey}`;
                 chrome.tabs.create({ url: viewerURL });
             }
             

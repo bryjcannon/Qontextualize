@@ -49,6 +49,10 @@ async function extractTranscript() {
         });
 
         const storageKey = `transcript_${videoId}`;
+        const summaryKey = `summary_${videoId}`;
+
+        // Format transcript for summarization
+        const fullText = transcriptData.map(segment => segment.text).join(' ');
 
         // Store in chrome.storage.local
         await chrome.storage.local.set({
@@ -56,7 +60,8 @@ async function extractTranscript() {
                 videoId,
                 videoTitle,
                 timestamp: Date.now(),
-                segments: transcriptData
+                segments: transcriptData,
+                fullText
             }
         });
 
@@ -66,7 +71,8 @@ async function extractTranscript() {
             success: true,
             videoTitle,
             videoId,
-            storageKey
+            storageKey,
+            summaryKey
         });
     } catch (error) {
         console.error('Error extracting transcript:', error);

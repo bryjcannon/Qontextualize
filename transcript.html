@@ -2,45 +2,73 @@
 <html>
 <head>
     <title>Transcript Viewer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script type="module" src="openai-service.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Montserrat', sans-serif;
             max-width: 800px;
             margin: 20px auto;
             padding: 20px;
-            background-color: #f5f5f5;
+            background-color: #000000;
+            color: #ffffff;
+        }
+        .logo {
+            display: inline-block;
+            padding: 8px 20px;
+            margin-bottom: 15px;
+            background: linear-gradient(to bottom, #590b0b, #e165c4);
+            border-radius: 6px;
+            box-shadow: 
+                inset 0 2px 2px rgba(255,255,255,0.3),
+                inset 0 -2px 2px rgba(0,0,0,0.3),
+                0 2px 4px rgba(0,0,0,0.2);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            transform: perspective(100px) rotateX(2deg);
         }
         .header {
             margin-bottom: 20px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #0066ff;
+            border-bottom: 2px solid #4B0082;
         }
-        .transcript-container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .summary-container {
+            background-color: #1a1a1a;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
-        .segment {
-            margin-bottom: 15px;
-            display: flex;
+        
+        .summary-text {
+            font-size: 18px;
+            line-height: 1.8;
+            color: #e0e0e0;
         }
-        .timestamp {
-            color: #666;
-            min-width: 100px;
-            margin-right: 15px;
-        }
-        .text {
-            flex: 1;
+        
+        h2 {
+            color: #dc91e4;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 24px;
         }
     </style>
 </head>
 <body>
     <div class="header">
+        <div class="logo">Qontext</div>
         <h1 id="video-title">Loading transcript...</h1>
     </div>
-    <div class="transcript-container" id="transcript-content">
+    <div class="summary-container">
+        <h2>Summary</h2>
+        <div id="summary-content" class="summary-text">
+            <p>Generating summary...</p>
+        </div>
     </div>
-    <script src="transcript.js"></script>
+
+    <script type="module" src="transcript.js"></script>
 </body>
 </html>
