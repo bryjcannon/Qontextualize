@@ -9,6 +9,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     try {
+        // Validate key format
+        if (!transcriptKey.startsWith('transcript_')) {
+            throw new Error('Invalid transcript key format');
+        }
+
         // Get transcript from chrome.storage
         const result = await chrome.storage.local.get(transcriptKey);
         const transcriptData = result[transcriptKey];

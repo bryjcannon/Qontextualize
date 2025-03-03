@@ -48,9 +48,11 @@ async function extractTranscript() {
             transcriptData.push({ timestamp, text });
         });
 
+        const storageKey = `transcript_${videoId}`;
+
         // Store in chrome.storage.local
         await chrome.storage.local.set({
-            currentTranscript: {
+            [storageKey]: {
                 videoId,
                 videoTitle,
                 timestamp: Date.now(),
@@ -62,7 +64,9 @@ async function extractTranscript() {
         chrome.runtime.sendMessage({ 
             action: 'transcriptExtracted', 
             success: true,
-            videoTitle 
+            videoTitle,
+            videoId,
+            storageKey
         });
     } catch (error) {
         console.error('Error extracting transcript:', error);

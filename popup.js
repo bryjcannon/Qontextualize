@@ -6,10 +6,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Initially disable download button
     downloadBtn.disabled = true;
     
-    // Check if we have a stored transcript
-    const stored = await chrome.storage.local.get('currentTranscript');
-    if (stored.currentTranscript) {
-        const { videoTitle, timestamp } = stored.currentTranscript;
+    // Get list of all stored transcripts
+    const stored = await chrome.storage.local.get(null);
+    const transcripts = Object.entries(stored)
+        .filter(([key]) => key.startsWith('transcript_'))
+        .sort((a, b) => b[1].timestamp - a[1].timestamp);
+
+    if (transcripts.length > 0) {
+        const [key, latestTranscript] = transcripts[0];
+        const { videoTitle, timestamp } = latestTranscript;
         const date = new Date(timestamp).toLocaleTimeString();
         statusText.textContent = `Last transcript: ${videoTitle} (${date})`;
         statusText.classList.add('success');
@@ -29,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 downloadBtn.disabled = false;
 
                 // Open transcript viewer in new tab
-                const viewerURL = chrome.runtime.getURL('transcript.html') + '?key=currentTranscript';
+                const viewerURL = chrome.runtime.getURL('transcript.html') + '?key=' + message.storageKey;
                 chrome.tabs.create({ url: viewerURL });
             }
             
@@ -75,13 +80,19 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Download button click handler
     downloadBtn.addEventListener('click', async function() {
         try {
-            const stored = await chrome.storage.local.get('currentTranscript');
-            if (!stored.currentTranscript) {
+            // Get latest transcript
+            const stored = await chrome.storage.local.get(null);
+            const transcripts = Object.entries(stored)
+                .filter(([key]) => key.startsWith('transcript_'))
+                .sort((a, b) => b[1].timestamp - a[1].timestamp);
+
+            if (transcripts.length === 0) {
                 throw new Error('No transcript available');
             }
 
             // Format transcript for download
-            const { segments, videoTitle } = stored.currentTranscript;
+            const [key, latestTranscript] = transcripts[0];
+            const { segments, videoTitle } = latestTranscript;
             let transcriptText = '';
             segments.forEach(segment => {
                 transcriptText += `${segment.timestamp} ${segment.text}\n`;
