@@ -30,10 +30,16 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(limiter);
 
-// Claim analysis endpoint
-app.post('/api/analyze', async (req, res) => {
+// Timing middleware
+const timingMiddleware = (req, res, next) => {
+    req.startTime = Date.now();
+    next();
+};
+
+// Add timing middleware to analyze endpoint
+app.post('/api/analyze', timingMiddleware, async (req, res) => {
     try {
-        const { transcript } = req.body;
+        const { transcript, clientStartTime } = req.body;
         
         if (!transcript) {
             return res.status(400).json({ error: 'Transcript is required' });
@@ -42,6 +48,19 @@ app.post('/api/analyze', async (req, res) => {
         console.log('Analyzing transcript...');
         const report = await generateFinalReport(transcript);
         console.log('Analysis complete');
+
+        // Calculate and log timing metrics
+        const serverProcessingTime = Date.now() - req.startTime;
+        const totalProcessingTime = Date.now() - (clientStartTime || req.startTime);
+        const timestamp = new Date().toISOString();
+
+        // Log detailed timing information to terminal
+        console.log('\n=== Video Analysis Timing Metrics ===');
+        console.log(`🎯 Analysis Request ID: ${req.startTime}`);
+        console.log(`⚡ Server Processing Time: ${(serverProcessingTime / 1000).toFixed(2)}s`);
+        console.log(`🕒 Total Processing Time: ${(totalProcessingTime / 1000).toFixed(2)}s`);
+        console.log(`📅 Completed at: ${new Date(timestamp).toLocaleString()}`);
+        console.log('==================================\n');
 
         res.json(report);
     } catch (error) {

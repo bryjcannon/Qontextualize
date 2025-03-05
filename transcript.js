@@ -68,6 +68,8 @@ function displayAnalysis(analysis) {
 
 async function analyzeTranscript(transcriptData, analysisKey) {
     try {
+        const clientStartTime = Date.now();
+        
         // Call server API to analyze transcript
         const response = await fetch(config.API_ENDPOINT, {
             method: 'POST',
@@ -75,7 +77,8 @@ async function analyzeTranscript(transcriptData, analysisKey) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                transcript: transcriptData.fullText
+                transcript: transcriptData.fullText,
+                clientStartTime
             })
         });
 

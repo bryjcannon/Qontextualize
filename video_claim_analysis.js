@@ -67,7 +67,16 @@ async function verifyClaims(claims) {
                     messages: [{ role: "user", content: prompt }]
                 });
                 
-                const text = response.choices[0].message.content.trim();
+                let text = response.choices[0].message.content.trim();
+                
+                // Remove any markdown formatting or extra text
+                if (text.includes('```')) {
+                    // Extract content between JSON code blocks if present
+                    const match = text.match(/```(?:json)?\n?([\s\S]+?)\n?```/);
+                    text = match ? match[1].trim() : text;
+                }
+                
+                // Parse the cleaned JSON
                 const analysis = JSON.parse(text);
                 return { topic, analysis };
             } catch (error) {
