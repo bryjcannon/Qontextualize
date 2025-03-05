@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
+import { prompts } from './prompts.js';
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -33,7 +34,7 @@ async function extractClaims(transcript) {
     let allClaims = [];
 
     for (const chunk of chunks) {
-        const prompt = `Given the following transcript segment:\n${chunk}\nIdentify strong claims, especially scientific or technical in nature. List each claim separately along with any sources mentioned. Format each claim as: "[Topic]: [Claim statement]"`;
+        const prompt = prompts.extractClaims(chunk);
         
         const response = await openai.chat.completions.create({
             model: "gpt-4o",
@@ -59,7 +60,7 @@ async function verifyClaims(claims) {
         .map(async claim => {
             const [topic, claimText] = claim.split(':', 2);
             
-            const prompt = `Analyze this scientific claim:\n${claim}\n\nProvide a JSON object with this exact structure (no additional text):\n{\n  "topic": "${topic}",\n  "confidence": "High/Medium/Low",\n  "assessment": "brief factual assessment of the claim's accuracy",\n  "evidence": ["key evidence point 1", "key evidence point 2"],\n  "consensus": "current scientific consensus on this topic"\n}`;
+            const prompt = prompts.verifyClaim(claim, topic);
             
             try {
                 const response = await openai.chat.completions.create({
@@ -157,7 +158,7 @@ async function generateFinalReport(transcript) {
         let processedClaims = [];
         
         // Generate a summary of the video and its claims
-        const summaryPrompt = `Summarize this transcript focusing on the main topics and scientific claims discussed:\n${transcript.slice(0, 2000)}`;
+        const summaryPrompt = prompts.generateSummary(transcript);
         const summaryResponse = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [{ role: "user", content: summaryPrompt }]
@@ -185,7 +186,7 @@ async function generateFinalReport(transcript) {
 
                     // Get scientific consensus if not present
                     if (!verification.consensus) {
-                        const consensusPrompt = `What is the current scientific consensus regarding: ${topic} ${claimText}\nProvide a brief, factual response based on current scientific understanding.`;
+                        const consensusPrompt = prompts.getConsensus(topic, claimText);
                         const consensusResponse = await openai.chat.completions.create({
                             model: "gpt-4o",
                             messages: [{ role: "user", content: consensusPrompt }]
