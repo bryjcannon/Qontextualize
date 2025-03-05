@@ -36,7 +36,7 @@ async function extractClaims(transcript) {
         const prompt = `Given the following transcript segment:\n${chunk}\nIdentify strong claims, especially scientific or technical in nature. List each claim separately along with any sources mentioned. Format each claim as: "[Topic]: [Claim statement]"`;
         
         const response = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
+            model: "gpt-4o",
             messages: [{ role: "user", content: prompt }]
         });
         
@@ -53,33 +53,45 @@ async function verifyClaims(claims) {
     const claimsList = claims.split('\n').filter(claim => claim.trim());
     let verifications = {};
 
-    for (const claim of claimsList) {
-        if (!claim.includes(':')) continue;
-        
-        const [topic, claimText] = claim.split(':', 2);
-        
-        const prompt = `Analyze this scientific claim:\n${claim}\n\nProvide a JSON object with this exact structure (no additional text):\n{\n  "topic": "${topic}",\n  "confidence": "High/Medium/Low",\n  "assessment": "brief factual assessment of the claim's accuracy",\n  "evidence": ["key evidence point 1", "key evidence point 2"],\n  "consensus": "current scientific consensus on this topic"\n}`;
-        
-        try {
-            const response = await openai.chat.completions.create({
-                model: "gpt-3.5-turbo",
-                messages: [{ role: "user", content: prompt }]
-            });
+    // Create array of promises for each claim verification
+    const verificationPromises = claimsList
+        .filter(claim => claim.includes(':'))
+        .map(async claim => {
+            const [topic, claimText] = claim.split(':', 2);
             
-            const text = response.choices[0].message.content.trim();
-            const analysis = JSON.parse(text);
-            verifications[topic] = analysis;
-        } catch (error) {
-            console.error(`Error verifying claim '${topic}':`, error);
-            verifications[topic] = {
-                topic,
-                confidence: 'Low',
-                assessment: 'Could not verify this claim',
-                evidence: [],
-                consensus: 'Insufficient data to establish scientific consensus'
-            };
-        }
-    }
+            const prompt = `Analyze this scientific claim:\n${claim}\n\nProvide a JSON object with this exact structure (no additional text):\n{\n  "topic": "${topic}",\n  "confidence": "High/Medium/Low",\n  "assessment": "brief factual assessment of the claim's accuracy",\n  "evidence": ["key evidence point 1", "key evidence point 2"],\n  "consensus": "current scientific consensus on this topic"\n}`;
+            
+            try {
+                const response = await openai.chat.completions.create({
+                    model: "gpt-4o",
+                    messages: [{ role: "user", content: prompt }]
+                });
+                
+                const text = response.choices[0].message.content.trim();
+                const analysis = JSON.parse(text);
+                return { topic, analysis };
+            } catch (error) {
+                console.error(`Error verifying claim '${topic}':`, error);
+                return {
+                    topic,
+                    analysis: {
+                        topic,
+                        confidence: 'Low',
+                        assessment: 'Could not verify this claim',
+                        evidence: [],
+                        consensus: 'Insufficient data to establish scientific consensus'
+                    }
+                };
+            }
+        });
+
+    // Wait for all verifications to complete
+    const results = await Promise.all(verificationPromises);
+    
+    // Convert results array to object
+    results.forEach(({ topic, analysis }) => {
+        verifications[topic] = analysis;
+    });
 
     return verifications;
 }
@@ -138,56 +150,63 @@ async function generateFinalReport(transcript) {
         // Generate a summary of the video and its claims
         const summaryPrompt = `Summarize this transcript focusing on the main topics and scientific claims discussed:\n${transcript.slice(0, 2000)}`;
         const summaryResponse = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
+            model: "gpt-4o",
             messages: [{ role: "user", content: summaryPrompt }]
         });
         const summary = summaryResponse.choices[0].message.content;
         
-        for (const claim of claimsList) {
-            if (!claim.includes(':')) continue;
-            
-            const [topic, claimText] = claim.split(':', 2);
-            console.log(`Processing claim: ${topic}`);
-            
-            try {
-                const sources = await fetchSourceLinks(topic);
-                const verification = verifiedClaims[topic] || {
-                    confidence: 'Low',
-                    assessment: 'Could not verify this claim',
-                    evidence: [],
-                    consensus: 'Insufficient data to establish scientific consensus'
-                };
+        // Process all claims in parallel
+        const claimPromises = claimsList
+            .filter(claim => claim.includes(':'))
+            .map(async claim => {
+                const [topic, claimText] = claim.split(':', 2);
+                console.log(`Processing claim: ${topic}`);
                 
-                // Get scientific consensus if not present
-                if (!verification.consensus) {
-                    const consensusPrompt = `What is the current scientific consensus regarding: ${topic} ${claimText}\nProvide a brief, factual response based on current scientific understanding.`;
-                    const consensusResponse = await openai.chat.completions.create({
-                        model: "gpt-3.5-turbo",
-                        messages: [{ role: "user", content: consensusPrompt }]
-                    });
-                    verification.consensus = consensusResponse.choices[0].message.content;
+                try {
+                    // Fetch sources and get verification in parallel
+                    const [sources, verification] = await Promise.all([
+                        fetchSourceLinks(topic),
+                        verifiedClaims[topic] || {
+                            confidence: 'Low',
+                            assessment: 'Could not verify this claim',
+                            evidence: [],
+                            consensus: 'Insufficient data to establish scientific consensus'
+                        }
+                    ]);
+
+                    // Get scientific consensus if not present
+                    if (!verification.consensus) {
+                        const consensusPrompt = `What is the current scientific consensus regarding: ${topic} ${claimText}\nProvide a brief, factual response based on current scientific understanding.`;
+                        const consensusResponse = await openai.chat.completions.create({
+                            model: "gpt-4o",
+                            messages: [{ role: "user", content: consensusPrompt }]
+                        });
+                        verification.consensus = consensusResponse.choices[0].message.content;
+                    }
+
+                    return {
+                        title: topic,
+                        summary: claimText.trim(),
+                        timestamps: timestamps[topic] || [],
+                        sources: sources.map(url => ({ url })),
+                        consensus: verification.consensus,
+                        assessment: verification.assessment
+                    };
+                } catch (error) {
+                    console.error(`Error processing claim '${topic}':`, error);
+                    return {
+                        title: topic,
+                        summary: claimText.trim(),
+                        timestamps: timestamps[topic] || [],
+                        sources: [],
+                        consensus: 'Error: Could not verify scientific consensus',
+                        assessment: 'Error: Could not fully analyze this claim'
+                    };
                 }
-                
-                processedClaims.push({
-                    title: topic,
-                    summary: claimText.trim(),
-                    timestamps: timestamps[topic] || [],
-                    sources: sources.map(url => ({ url })),
-                    consensus: verification.consensus,
-                    assessment: verification.assessment
-                });
-            } catch (error) {
-                console.error(`Error processing claim '${topic}':`, error);
-                processedClaims.push({
-                    title: topic,
-                    summary: claimText.trim(),
-                    timestamps: timestamps[topic] || [],
-                    sources: [],
-                    consensus: 'Error: Could not verify scientific consensus',
-                    assessment: 'Error: Could not fully analyze this claim'
-                });
-            }
-        }
+            });
+
+        // Wait for all claims to be processed
+        processedClaims = await Promise.all(claimPromises);  
         
         return {
             videoTitle: 'Video Analysis',  // This will be set by the frontend
