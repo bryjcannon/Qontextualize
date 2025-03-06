@@ -1,4 +1,4 @@
-import config from './config.js';
+import config from './config.browser.js';
 
 class OpenAIService {
     async sleep(ms) {

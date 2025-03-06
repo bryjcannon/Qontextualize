@@ -1,16 +1,48 @@
-import config from './config.js';
+import config from './config.browser.js';
 
 function formatTimestamps(timestamps) {
     return timestamps.map(ts => `<span class="timestamp">${ts}</span>`).join('');
 }
 
 function formatSources(sources) {
-    return sources.map(source => {
-        if (source.url) {
-            return `<a href="${source.url}" target="_blank">${source.title || source.url}</a>`;
-        }
-        return source.title || source;
-    }).join('');
+    console.log('📖 Formatting sources:', sources);
+    
+    if (!sources || !Array.isArray(sources)) {
+        console.log('⚠️ Invalid sources data:', sources);
+        return 'No sources available';
+    }
+    
+    try {
+        const validSources = sources.filter(source => {
+            const isValid = source && source.url;
+            if (!isValid) {
+                console.log('❗ Filtered out invalid source:', source);
+            }
+            return isValid;
+        });
+        
+        console.log(`📋 Valid sources: ${validSources.length} of ${sources.length}`);
+        
+        const formattedSources = validSources.map(source => {
+            console.log('📕 Processing source:', source);
+            const domain = source.domain || new URL(source.url).hostname;
+            const displayText = source.title || `${domain} Source`;
+            const link = `<a href="${source.url}" target="_blank" class="source-link ${domain.split('.')[0]}">
+                ${displayText}
+                <span class="source-domain">(${domain})</span>
+            </a>`;
+            console.log('🔗 Generated link:', link);
+            return link;
+        });
+
+        const result = formattedSources.join('\n') || 'No sources available';
+        console.log('🌟 Final formatted sources:', result);
+        return result;
+    } catch (error) {
+        console.error('❌ Error formatting sources:', error);
+        console.log('📝 Raw sources data:', JSON.stringify(sources, null, 2));
+        return 'Error displaying sources';
+    }
 }
 
 function displayAnalysis(analysis) {
@@ -44,7 +76,7 @@ function displayAnalysis(analysis) {
 
         const sources = document.createElement('div');
         sources.className = 'claim-text';
-        sources.innerHTML = `<strong>Source Mentioned:</strong> ${formatSources(claim.sources)}`;
+        sources.innerHTML = `<strong>Sources:</strong><div class="source-list">${formatSources(claim.sources)}</div>`;
 
         const consensus = document.createElement('div');
         consensus.className = 'claim-text';
@@ -71,7 +103,7 @@ async function analyzeTranscript(transcriptData, analysisKey) {
         const clientStartTime = Date.now();
         
         // Call server API to analyze transcript
-        const response = await fetch(config.API_ENDPOINT, {
+        const response = await fetch(config.PROXY_API_ENDPOINT, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

@@ -6,7 +6,8 @@
   "permissions": ["activeTab", "scripting", "storage", "tabs"],
   "host_permissions": [
     "https://www.youtube.com/watch?v=*",
-    "http://localhost:3000/*"
+    "http://localhost:3000/*",
+    "https://www.googleapis.com/customsearch/*"
   ],
   "action": {
     "default_popup": "popup.html"

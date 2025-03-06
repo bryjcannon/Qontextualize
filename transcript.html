@@ -77,16 +77,70 @@
             border-top: 1px solid #333;
         }
 
-        .sources a {
+        .source-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
+            padding-left: 20px;
+        }
+
+        .source-link {
             color: #3498db;
             text-decoration: none;
-            display: inline-block;
-            margin-right: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(52, 152, 219, 0.1);
+            transition: all 0.2s ease;
             font-size: 14px;
         }
 
-        .sources a:hover {
-            text-decoration: underline;
+        .source-link:hover {
+            background: rgba(52, 152, 219, 0.2);
+        }
+
+        .source-domain {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .source-link.ncbi {
+            color: #2ecc71;
+            background: rgba(46, 204, 113, 0.1);
+        }
+
+        .source-link.ncbi:hover {
+            background: rgba(46, 204, 113, 0.2);
+        }
+
+        .source-link.cdc {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .source-link.cdc:hover {
+            background: rgba(231, 76, 60, 0.2);
+        }
+
+        .source-link.who {
+            color: #f1c40f;
+            background: rgba(241, 196, 15, 0.1);
+        }
+
+        .source-link.who:hover {
+            background: rgba(241, 196, 15, 0.2);
+        }
+
+        .source-link.nejm {
+            color: #9b59b6;
+            background: rgba(155, 89, 182, 0.1);
+        }
+
+        .source-link.nejm:hover {
+            background: rgba(155, 89, 182, 0.2);
         }
         
         .analysis-text {

@@ -1,17 +1,24 @@
 import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
+import { config as dotenvConfig } from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import path from 'path';
-import { generateFinalReport } from '../video_claim_analysis.js';
+import { generateFinalReport } from '../report-generator.js';
 
-// Load environment variables
-dotenv.config();
-
+// Set up __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Load environment variables from root directory
+dotenvConfig({ path: path.resolve(__dirname, '../.env') });
+
+// Log environment variables for debugging
+console.log('🔑 Environment Variables loaded:', {
+    GOOGLE_API_KEY: process.env.GOOGLE_API_KEY ? 'Set' : 'Not Set',
+    GOOGLE_SEARCH_CX: process.env.GOOGLE_SEARCH_CX ? 'Set' : 'Not Set'
+});
 
 const app = express();
 
@@ -23,7 +30,7 @@ const limiter = rateLimit({
 
 // Middleware
 app.use(cors({
-    origin: ['chrome-extension://*'],
+    origin: ['chrome-extension://*', 'http://localhost:3000'],
     methods: ['POST'],
     allowedHeaders: ['Content-Type']
 }));
