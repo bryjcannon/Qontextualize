@@ -1,8 +1,5 @@
 import config from './config.browser.js';
 
-function formatTimestamps(timestamps) {
-    return timestamps.map(ts => `<span class="timestamp">${ts}</span>`).join('');
-}
 
 function formatSources(sources) {
     console.log('📖 Formatting sources:', sources);
@@ -61,38 +58,43 @@ function displayAnalysis(analysis) {
     // Display claims
     analysis.claims.forEach((claim, index) => {
         const claimSection = document.createElement('div');
-        claimSection.className = 'claim-section';
 
         const claimTitle = document.createElement('h3');
+        claimTitle.className = 'claim-title';
         claimTitle.textContent = `Claim ${index + 1}: ${claim.title}`;
-
-        const claimSummary = document.createElement('div');
-        claimSummary.className = 'claim-text';
-        claimSummary.innerHTML = `<strong>Summary of Claim:</strong> ${claim.summary}`;
-
-        const timestamps = document.createElement('div');
-        timestamps.className = 'claim-text';
-        timestamps.innerHTML = `<strong>Timestamp:</strong> ${formatTimestamps(claim.timestamps)}`;
-
-        const sources = document.createElement('div');
-        sources.className = 'claim-text';
-        sources.innerHTML = `<strong>Sources:</strong><div class="source-list">${formatSources(claim.sources)}</div>`;
-
-        const consensus = document.createElement('div');
-        consensus.className = 'claim-text';
-        consensus.innerHTML = `<strong>Scientific Consensus:</strong> ${claim.consensus}`;
-
-        const assessment = document.createElement('div');
-        assessment.className = 'claim-text';
-        assessment.innerHTML = `<strong>Assessment:</strong> ${claim.assessment}`;
-
         claimSection.appendChild(claimTitle);
-        claimSection.appendChild(claimSummary);
-        claimSection.appendChild(timestamps);
-        claimSection.appendChild(consensus);
-        claimSection.appendChild(assessment);
-        claimSection.appendChild(sources);
 
+        const claimContent = document.createElement('div');
+        claimContent.className = 'claim-content';
+
+        // Summary
+        const summary = document.createElement('div');
+        summary.className = 'claim-item';
+        summary.innerHTML = `<strong>Summary of Claim:</strong> ${claim.summary}`;
+        claimContent.appendChild(summary);
+
+        // Source
+        if (claim.source) {
+            const source = document.createElement('div');
+            source.className = 'claim-item';
+            source.innerHTML = `<strong>Source Mentioned:</strong> ${claim.source}`;
+            claimContent.appendChild(source);
+        }
+
+        // Consensus
+        const consensus = document.createElement('div');
+        consensus.className = 'claim-item';
+        consensus.innerHTML = `<strong>Scientific Consensus:</strong> ${claim.consensus}`;
+        claimContent.appendChild(consensus);
+
+        // Assessment
+        const assessment = document.createElement('div');
+        assessment.className = 'claim-item';
+        const assessmentClass = claim.assessment.toLowerCase().includes('not supported') ? ' assessment-not-supported' : '';
+        assessment.innerHTML = `<strong>Assessment:</strong><span class="${assessmentClass}">${claim.assessment}</span>`;
+        claimContent.appendChild(assessment);
+
+        claimSection.appendChild(claimContent);
         analysisContent.appendChild(claimSection);
     });
 }

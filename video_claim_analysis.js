@@ -84,10 +84,13 @@ function chunkTranscript(transcript, options = {}) {
 
 import { saveClaimsSummary } from './utils/claims_record.js';
 
+import { processClaims } from './utils/claims_processor.js';
+
 async function extractClaims(transcript) {
     const chunks = chunkTranscript(transcript);
     let allClaims = [];
 
+    // Extract initial claims from chunks
     for (const chunk of chunks) {
         const prompt = prompts.extractClaims(chunk);
         
@@ -97,20 +100,29 @@ async function extractClaims(transcript) {
         });
         
         const claims = response.choices[0].message.content;
-        allClaims.push(claims);
+        allClaims.push(...claims.split('\n').filter(claim => claim.trim()));
     }
 
-    // Combine and deduplicate claims
-    const uniqueClaims = new Set(allClaims.join('\n').split('\n').filter(claim => claim.trim()));
+    // Process claims through the pipeline
+    console.log('Processing claims through reduction pipeline...');
+    const processedResults = await processClaims(allClaims);
     
-    // Save claims summary
+    // Save claims summary with processing metadata
     try {
-        await saveClaimsSummary(uniqueClaims);
+        await saveClaimsSummary(new Set(processedResults.claims), {
+            processingMetadata: {
+                originalCount: processedResults.originalCount,
+                filteredCount: processedResults.filteredCount,
+                uniqueCount: processedResults.uniqueCount,
+                finalCount: processedResults.finalCount,
+                scores: processedResults.scores
+            }
+        });
     } catch (error) {
         console.error('Failed to save claims summary:', error);
     }
     
-    return Array.from(uniqueClaims).join('\n');
+    return processedResults.claims.join('\n');
 }
 
 async function verifyClaims(claims) {

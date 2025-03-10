@@ -1,186 +1,102 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Transcript Viewer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" src="openai-service.js"></script>
+    <title>Video Analysis</title>
     <style>
         body {
-            font-family: 'Montserrat', sans-serif;
-            max-width: 900px;
-            margin: 40px auto;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 20px;
-            background-color: #1a1a1a;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+        h1 {
             color: #ffffff;
-            line-height: 1.6;
-        }
-        .logo {
-            display: none; /* Hide the logo as per reference design */
-        }
-        .header {
-            margin-bottom: 40px;
-        }
-        .analysis-container {
-            background-color: transparent;
-            margin-bottom: 40px;
-        }
-
-        .claim-section {
-            border-bottom: 1px solid #333;
-            padding: 30px 0;
             margin-bottom: 30px;
+            font-size: 42px;
+            font-weight: 600;
+            line-height: 1.2;
         }
 
-        .claim-section:last-child {
-            border-bottom: none;
-        }
-
-        .claim-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .confidence {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 14px;
+        h2 {
+            color: #ffffff;
+            font-size: 32px;
+            margin: 40px 0 20px;
             font-weight: 500;
         }
 
-        .confidence.high {
-            background-color: #1a472a;
-            color: #2ecc71;
+        .summary-section {
+            margin: 30px 0;
+            font-size: 18px;
+            line-height: 1.6;
+            color: #e0e0e0;
         }
 
-        .confidence.medium {
-            background-color: #7d5d1a;
-            color: #f1c40f;
+        .claims-intro {
+            margin: 30px 0;
+            font-size: 18px;
+            line-height: 1.6;
+            color: #e0e0e0;
         }
 
-        .confidence.low {
-            background-color: #641e16;
-            color: #e74c3c;
+        .claim-title {
+            font-size: 24px;
+            color: #ffffff;
+            margin: 40px 0 20px;
+            font-weight: 500;
         }
 
-        .timestamp {
-            color: #666;
-            font-family: monospace;
-            font-size: 14px;
-            margin-right: 10px;
+        .claim-content {
+            margin-left: 25px;
         }
 
-        .sources {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #333;
+        .claim-item {
+            margin: 15px 0;
+            font-size: 18px;
+            line-height: 1.6;
         }
 
-        .source-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-top: 8px;
-            padding-left: 20px;
+        .claim-item strong {
+            color: #ffffff;
+            display: block;
+            margin-bottom: 8px;
         }
 
         .source-link {
             color: #3498db;
             text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            background: rgba(52, 152, 219, 0.1);
-            transition: all 0.2s ease;
-            font-size: 14px;
+            display: inline-block;
+            margin: 5px 0;
+            font-size: 16px;
         }
 
         .source-link:hover {
-            background: rgba(52, 152, 219, 0.2);
+            text-decoration: underline;
         }
 
-        .source-domain {
-            color: #666;
-            font-size: 0.9em;
-        }
-
-        .source-link.ncbi {
-            color: #2ecc71;
-            background: rgba(46, 204, 113, 0.1);
-        }
-
-        .source-link.ncbi:hover {
-            background: rgba(46, 204, 113, 0.2);
-        }
-
-        .source-link.cdc {
+        .assessment-not-supported {
             color: #e74c3c;
-            background: rgba(231, 76, 60, 0.1);
-        }
-
-        .source-link.cdc:hover {
-            background: rgba(231, 76, 60, 0.2);
-        }
-
-        .source-link.who {
-            color: #f1c40f;
-            background: rgba(241, 196, 15, 0.1);
-        }
-
-        .source-link.who:hover {
-            background: rgba(241, 196, 15, 0.2);
-        }
-
-        .source-link.nejm {
-            color: #9b59b6;
-            background: rgba(155, 89, 182, 0.1);
-        }
-
-        .source-link.nejm:hover {
-            background: rgba(155, 89, 182, 0.2);
-        }
-        
-        .analysis-text {
-            font-size: 16px;
-            line-height: 1.8;
-            color: #e0e0e0;
-        }
-
-        h3 {
-            color: #ffffff;
-            margin: 0 0 20px 0;
-            font-size: 24px;
-            font-weight: 500;
-        }
-
-        h2 {
-            color: #ffffff;
-            margin: 0 0 40px 0;
-            font-size: 24px;
-            font-weight: 500;
-        }
-        
-        h2 {
-            color: #dc91e4;
-            margin-top: 0;
-            margin-bottom: 20px;
-            font-size: 24px;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1 id="video-title">Loading transcript...</h1>
-    </div>
-    <div id="video-summary" class="video-summary">
+    <h1 id="video-title">
+        Loading video title...
+    </h1>
+
+    <h2>Summary of the Video</h2>
+    <div id="video-summary" class="summary-section">
         Loading video summary...
     </div>
+
     <h2>Strong Claims and Their Evaluation</h2>
+    <div class="claims-intro">
+        Below are key claims made in the conversation, along with an assessment of their validity based on scientific consensus.
+    </div>
+    
     <div id="analysis-content">
-        <p>Analyzing claims...</p>
+        Loading analysis...
     </div>
 
     <script type="module" src="transcript.js"></script>
