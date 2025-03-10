@@ -9,26 +9,80 @@ dotenvConfig();
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-function chunkTranscript(transcript, maxChunkSize = 10000) {
+/**
+ * Estimates the number of tokens in a text string.
+ * This is a rough estimate based on GPT tokenization patterns.
+ * @param {string} text - The text to estimate tokens for
+ * @returns {number} Estimated token count
+ */
+function estimateTokenCount(text) {
+    // GPT models typically tokenize on word boundaries and common subwords
+    // A rough estimate is 4 characters per token on average
+    const charCount = text.length;
+    return Math.ceil(charCount / 4);
+}
+
+/**
+ * Splits transcript into overlapping chunks optimized for GPT-4-Turbo.
+ * @param {string} transcript - The full transcript text
+ * @param {Object} options - Chunking options
+ * @param {number} options.maxTokens - Maximum tokens per chunk (default 10000)
+ * @param {number} options.overlapTokens - Number of tokens to overlap (default 200)
+ * @returns {string[]} Array of transcript chunks
+ */
+function chunkTranscript(transcript, options = {}) {
+    const {
+        maxTokens = 10000,      // Target ~10K tokens per chunk
+        overlapTokens = 200     // Overlap by ~200 tokens
+    } = options;
+
+    // Convert token counts to approximate character lengths
+    const maxChars = maxTokens * 4;
+    const overlapChars = overlapTokens * 4;
+
     // Split transcript into sentences
     const sentences = transcript.match(/[^.!?]+[.!?]+/g) || [transcript];
     const chunks = [];
     let currentChunk = '';
+    let overlapSegment = '';
 
     for (const sentence of sentences) {
-        if ((currentChunk + sentence).length > maxChunkSize && currentChunk.length > 0) {
+        // Add new sentence to the current chunk
+        const newChunk = currentChunk + sentence + ' ';
+        
+        if (estimateTokenCount(newChunk) > maxTokens && currentChunk.length > 0) {
+            // Store the current chunk
             chunks.push(currentChunk.trim());
-            currentChunk = '';
+            
+            // Get the overlap segment from the end of the current chunk
+            const words = currentChunk.split(' ');
+            overlapSegment = words
+                .slice(Math.max(0, words.length - overlapTokens))
+                .join(' ');
+            
+            // Start new chunk with overlap
+            currentChunk = overlapSegment + ' ' + sentence + ' ';
+        } else {
+            currentChunk = newChunk;
         }
-        currentChunk += sentence + ' ';
     }
 
+    // Add the final chunk if not empty
     if (currentChunk.trim().length > 0) {
         chunks.push(currentChunk.trim());
     }
 
+    // Log chunking statistics
+    console.log(`Split transcript into ${chunks.length} chunks:`);
+    chunks.forEach((chunk, i) => {
+        const tokenCount = estimateTokenCount(chunk);
+        console.log(`Chunk ${i + 1}: ~${tokenCount} tokens`);
+    });
+
     return chunks;
 }
+
+import { saveClaimsSummary } from './utils/claims_record.js';
 
 async function extractClaims(transcript) {
     const chunks = chunkTranscript(transcript);
@@ -38,7 +92,7 @@ async function extractClaims(transcript) {
         const prompt = prompts.extractClaims(chunk);
         
         const response = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model: "gpt-4-turbo-preview",
             messages: [{ role: "user", content: prompt }]
         });
         
@@ -48,6 +102,14 @@ async function extractClaims(transcript) {
 
     // Combine and deduplicate claims
     const uniqueClaims = new Set(allClaims.join('\n').split('\n').filter(claim => claim.trim()));
+    
+    // Save claims summary
+    try {
+        await saveClaimsSummary(uniqueClaims);
+    } catch (error) {
+        console.error('Failed to save claims summary:', error);
+    }
+    
     return Array.from(uniqueClaims).join('\n');
 }
 

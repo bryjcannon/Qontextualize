@@ -1,9 +1,9 @@
 // OpenAI prompts for video claim analysis
 export const prompts = {
     // Extract claims from transcript chunks
-    extractClaims: (chunk) => `Given the following transcript segment:
+    extractClaims: (chunk) => `Given the following transcript:
 ${chunk}
-Identify strong claims, especially scientific or technical in nature. List each claim separately along with any sources mentioned. Format each claim as: "[Topic]: [Claim statement]"`,
+You are an AI expert in scientific fact-checking. Identify strong claims, especially scientific or technical in nature. List each claim separately along with any sources mentioned. Format each claim as: "[Topic]: [Claim statement]".`,
 
     // Verify individual claims
     verifyClaim: (claim, topic) => `Analyze this scientific claim:
