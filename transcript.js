@@ -89,9 +89,9 @@ function displayAnalysis(analysis) {
         claimSection.appendChild(claimTitle);
         claimSection.appendChild(claimSummary);
         claimSection.appendChild(timestamps);
-        claimSection.appendChild(sources);
         claimSection.appendChild(consensus);
         claimSection.appendChild(assessment);
+        claimSection.appendChild(sources);
 
         analysisContent.appendChild(claimSection);
     });
