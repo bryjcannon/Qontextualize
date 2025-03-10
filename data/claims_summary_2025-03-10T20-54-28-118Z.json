@@ -1,0 +1,22 @@
+{
+  "totalClaims": 7,
+  "timestamp": "2025-03-10T20:54:28.117Z",
+  "claims": [
+    "1. **Chrome Extension Development**: To create a Chrome extension, one must create an index.html file for structure, a JavaScript file for functionality, and a manifest.json file for metadata about the Chrome extension. This claim is not directly sourced but is presented as common knowledge or practice in web development and Chrome extension documentation.",
+    "2. **HTML Auto-fill Trick**: Pressing the exclamation mark followed by enter in certain code editors auto-generates the barebone structure of an HTML file. This claim is presented as a tip without a direct source but is a known feature in popular code editors like Visual Studio Code.",
+    "3. **Use of APIs with Rapid API**: The speaker signed up for Rapid API to access a variety of APIs for the project. They specifically mention using an \"artist events tracker\" API to fetch upcoming events by location. This claim about the utility of Rapid API and the existence of an \"artist events tracker\" API is based on the speaker's personal experience and lacks a direct external source but represents a typical use case scenario for Rapid API services.",
+    "4. **Eventbrite API Limitation**: The speaker claims Eventbrite's API only allows access to events created by the user, making it unsuitable for their project of fetching public concert information by location. This claim about Eventbrite's API limitations is based on the speaker's understanding from a quick overview and not directly sourced from Eventbrite's documentation.",
+    "5. **Fetching Data Asynchronously in JavaScript**: An async function called `FetchData` is created to fetch data from an API. The process involves awaiting the response and converting it to JSON. This claim about how asynchronous data fetching works in JavaScript aligns with common JavaScript programming patterns and practices but is not backed by a specific source in the transcript.",
+    "6. **Displaying API Data in HTML**: The fetched data from the API is then mapped over and inserted into an HTML element to display it as a list. This claim about manipulating the DOM (Document Object Model) with JavaScript to display API data is a standard practice in web development. The claim isn't directly sourced in the transcript but is representative of common web development techniques.",
+    "7. **Manifest.json File for Chrome Extensions**: The speaker claims that creating a manifest.json file containing metadata is necessary for making a Chrome extension. This claim is foundational knowledge for developing Chrome extensions and aligns with Google Chrome's official documentation, though no direct source is provided in the transcript."
+  ],
+  "topics": [
+    "1. **Chrome Extension Development**",
+    "2. **HTML Auto-fill Trick**",
+    "3. **Use of APIs with Rapid API**",
+    "4. **Eventbrite API Limitation**",
+    "5. **Fetching Data Asynchronously in JavaScript**",
+    "6. **Displaying API Data in HTML**",
+    "7. **Manifest.json File for Chrome Extensions**"
+  ]
+}

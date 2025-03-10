@@ -3,10 +3,10 @@ export const prompts = {
     // Extract claims from transcript chunks
     extractClaims: (chunk) => `Given the following transcript:
 ${chunk}
-You are an AI expert in scientific fact-checking. Identify strong claims, especially scientific or technical in nature. List each claim separately along with any sources mentioned. Format each claim as: "[Topic]: [Claim statement]".`,
+You are an AI expert in scientific fact-checking. Identify strong claims, especially scientific or technical in nature, using TF-IDF & NLP techniques. List each claim separately along with any sources mentioned. Format each claim as: "[Topic]: [Claim statement]".`,
 
     // Verify individual claims
-    verifyClaim: (claim, topic) => `Analyze this scientific claim:
+    verifyClaim: (claim, topic) => `You are an AI expert in scientific fact-checking. Analyze this scientific claim:
 ${claim}
 
 Provide a JSON object with this exact structure (no additional text):
