@@ -119,31 +119,6 @@ Return YES if it meets either criteria, even if the claim seems controversial, u
 }
 
 /**
- * Uses the elbow method to find optimal number of claims
- */
-function findOptimalClaimCount(scoredClaims) {
-    const scores = scoredClaims.map(c => c.score);
-    const maxClaims = Math.min(20, scores.length); // Cap at 10 claims
-    
-    // Calculate score differences
-    const diffs = [];
-    for (let i = 1; i < scores.length; i++) {
-        diffs.push(scores[i-1] - scores[i]);
-    }
-    
-    // Find elbow point (significant drop in scores)
-    let elbowPoint = 3; // Minimum claims
-    for (let i = 3; i < maxClaims; i++) {
-        if (diffs[i] < 0.25) { // Threshold for significant difference
-            elbowPoint = i;
-            break;
-        }
-    }
-    
-    return Math.min(elbowPoint, maxClaims);
-}
-
-/**
  * Main pipeline for processing claims
  */
 export async function processClaims(rawClaims) {
@@ -163,21 +138,13 @@ export async function processClaims(rawClaims) {
     console.log("Scoring claims...");
     const scoredClaims = await scoreClaims(uniqueClaims);
     
-    // Step 4: Find optimal number of claims
-    const optimalCount = findOptimalClaimCount(scoredClaims);
-    console.log(`Selected optimal number of claims: ${optimalCount}`);
-
-    // Return top N claims
-    const finalClaims = scoredClaims
-        .slice(0, optimalCount)
-        .map(c => c.claim);
-
+    // Return all claims and their scores
     return {
         originalCount: rawClaims.length,
         filteredCount: filteredClaims.length,
         uniqueCount: uniqueClaims.length,
-        finalCount: finalClaims.length,
-        claims: finalClaims,
-        scores: scoredClaims.slice(0, optimalCount)
+        finalCount: scoredClaims.length,
+        claims: scoredClaims.map(c => c.claim),
+        scores: scoredClaims
     };
 }
