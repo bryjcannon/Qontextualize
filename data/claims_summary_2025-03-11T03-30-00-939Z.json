@@ -1,0 +1,16 @@
+{
+  "totalClaims": 4,
+  "timestamp": "2025-03-11T03:30:00.938Z",
+  "claims": [
+    "3. **Comparative Risk Claim:** The relative risk of smoking a pack of cigarettes daily for 20 years and getting lung cancer is 10.",
+    "- Claim: \"During COVID-19, [the United States] had 16% of the COVID deaths with only 4.2% of the global population.\"",
+    "- Claim: \"Atrazine exposure led to 30 of 40 male frogs becoming chemically castrated, with four turning into females capable of producing fertile eggs.\"",
+    "3. **Healthcare Expenditure vs. Outcomes**: The United States spends more on healthcare (over 4 trillion dollars) than any other country but has worse health outcomes, ranking behind countries like Mongolia, Costa Rica, and Cuba."
+  ],
+  "topics": [
+    "3. **Comparative Risk Claim",
+    "- Claim",
+    "- Claim",
+    "3. **Healthcare Expenditure vs. Outcomes**"
+  ]
+}

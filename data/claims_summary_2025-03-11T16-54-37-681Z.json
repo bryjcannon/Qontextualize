@@ -1,0 +1,14 @@
+{
+  "totalClaims": 3,
+  "timestamp": "2025-03-11T16:54:37.681Z",
+  "claims": [
+    "   Sources/Context: Discussion involves the Vaccine Safety Datalink data and studies examining the health outcomes of children who received the hepatitis B vaccine within the first month of life versus those who did not.",
+    "3. **Healthcare Spending**: The U.S. spends $4.3 trillion on healthcare annually, with 80% of that going to chronic disease.",
+    "9. **Atrazine and Endocrine Disruption**: Atrazine exposure linked to sexual development issues and drastic effects on amphibian biology, suggesting potential risks to humans."
+  ],
+  "topics": [
+    "Sources/Context",
+    "3. **Healthcare Spending**",
+    "9. **Atrazine and Endocrine Disruption**"
+  ]
+}
