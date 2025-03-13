@@ -139,22 +139,45 @@ async function verifyClaims(claims) {
             
             try {
                 const response = await openai.chat.completions.create({
-                    model: "gpt-4o",
-                    messages: [{ role: "user", content: prompt }]
+                    model: "gpt-4-turbo-preview",
+                    messages: [{ 
+                        role: "system", 
+                        content: "You are a scientific fact-checker. Always respond with valid JSON matching the exact schema requested."
+                    }, { 
+                        role: "user", 
+                        content: prompt 
+                    }],
+                    response_format: { type: "json_object" }
                 });
                 
                 let text = response.choices[0].message.content.trim();
                 
-                // Remove any markdown formatting or extra text
-                if (text.includes('```')) {
-                    // Extract content between JSON code blocks if present
-                    const match = text.match(/```(?:json)?\n?([\s\S]+?)\n?```/);
-                    text = match ? match[1].trim() : text;
+                try {
+                    // Parse the JSON response
+                    const analysis = JSON.parse(text);
+                    
+                    // Validate required fields
+                    if (!analysis.topic || !analysis.confidence || !analysis.assessment || !analysis.evidence || !analysis.consensus) {
+                        throw new Error('Missing required fields in JSON response');
+                    }
+                    
+                    return { topic, analysis };
+                } catch (parseError) {
+                    console.error(`JSON parsing error for claim '${topic}':`, parseError);
+                    console.error('Raw response:', text);
+                    
+                    // Return a structured error response
+                    return {
+                        topic,
+                        analysis: {
+                            topic,
+                            confidence: 'Low',
+                            assessment: 'Error parsing verification response',
+                            evidence: [],
+                            consensus: 'Unable to verify due to technical error'
+                        }
+                    };
                 }
-                
-                // Parse the cleaned JSON
-                const analysis = JSON.parse(text);
-                return { topic, analysis };
             } catch (error) {
                 console.error(`Error verifying claim '${topic}':`, error);
                 return {

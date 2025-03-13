@@ -1,93 +1,11 @@
 import OpenAI from 'openai';
 import { prompts } from '../prompts.js';
+import fs from 'fs/promises';
+import path from 'path';
+import { clusterClaims, scoreClaims } from './cluster_claims.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-/**
- * Calculates cosine similarity between two embeddings
- */
-function cosineSimilarity(embedding1, embedding2) {
-    const dotProduct = embedding1.reduce((sum, val, i) => sum + val * embedding2[i], 0);
-    const norm1 = Math.sqrt(embedding1.reduce((sum, val) => sum + val * val, 0));
-    const norm2 = Math.sqrt(embedding2.reduce((sum, val) => sum + val * val, 0));
-    return dotProduct / (norm1 * norm2);
-}
-
-/**
- * Clusters claims based on semantic similarity
- */
-async function clusterClaims(claims) {
-    // Get embeddings for all claims
-    const embeddings = await Promise.all(claims.map(async claim => {
-        const response = await openai.embeddings.create({
-            model: "text-embedding-ada-002",
-            input: claim
-        });
-        return response.data[0].embedding;
-    }));
-
-    // Build similarity matrix
-    const similarityMatrix = embeddings.map(emb1 => 
-        embeddings.map(emb2 => cosineSimilarity(emb1, emb2))
-    );
-
-    // Cluster claims using hierarchical clustering
-    const clusters = [];
-    const used = new Set();
-    const similarityThreshold = 0.95;
-
-    for (let i = 0; i < claims.length; i++) {
-        if (used.has(i)) continue;
-
-        const cluster = [i];
-        used.add(i);
-
-        for (let j = i + 1; j < claims.length; j++) {
-            if (used.has(j)) continue;
-            if (similarityMatrix[i][j] > similarityThreshold) {
-                cluster.push(j);
-                used.add(j);
-            }
-        }
-
-        clusters.push(cluster.map(idx => claims[idx]));
-    }
-
-    // Select representative claim from each cluster
-    return clusters.map(cluster => cluster[0]);
-}
-
-/**
- * Scores claims based on importance and confidence
- */
-async function scoreClaims(claims) {
-    const scorePrompt = `Rate the following scientific claim on a scale of 1-10 based on:
-- Importance (scientific significance)
-- Specificity (concrete vs vague)
-- Verifiability (can be fact-checked)
-- Confidence (strength of the claim)
-
-Claim: {claim}
-
-Return only a number 1-10.`;
-
-    const scores = await Promise.all(claims.map(async claim => {
-        const response = await openai.chat.completions.create({
-            model: "gpt-4-turbo-preview",
-            messages: [{ 
-                role: "user", 
-                content: scorePrompt.replace("{claim}", claim)
-            }],
-            temperature: 0.3
-        });
-        return parseFloat(response.choices[0].message.content);
-    }));
-
-    return claims.map((claim, i) => ({
-        claim,
-        score: scores[i]
-    })).sort((a, b) => b.score - a.score);
-}
 
 /**
  * Filters out low-confidence or problematic claims
@@ -129,22 +47,81 @@ export async function processClaims(rawClaims) {
     const filteredClaims = await filterClaims(rawClaims);
     console.log(`Filtered to ${filteredClaims.length} quality claims`);
 
-    // Step 2: Cluster similar claims
-    console.log("Clustering similar claims...");
-    const uniqueClaims = await clusterClaims(filteredClaims);
-    console.log(`Clustered to ${uniqueClaims.length} unique claims`);
-
-    // Step 3: Score remaining claims
-    console.log("Scoring claims...");
-    const scoredClaims = await scoreClaims(uniqueClaims);
+    // Step 2: Cluster and score claims
+    console.log("Clustering and scoring claims...");
+    const clusterResults = await clusterClaims(filteredClaims);
     
-    // Return all claims and their scores
+    // Flatten clusters into a single list of scored claims
+    const allScoredClaims = [];
+    for (const [clusterName, clusterText] of Object.entries(clusterResults)) {
+        // Parse claims and scores from cluster text
+        const clusterClaims = clusterText.split('\n').map(line => {
+            const match = line.match(/\[Risk Score: (\d+\.\d+)\] (.+)/);
+            return match ? {
+                claim: match[2],
+                score: parseFloat(match[1]),
+                cluster: clusterName
+            } : null;
+        }).filter(Boolean);
+        
+        allScoredClaims.push(...clusterClaims);
+    }
+    
+    // Sort all claims by score
+    const sortedClaims = allScoredClaims.sort((a, b) => b.score - a.score);
+    
+    // Save scores to CSV - critical step
+    const dataDir = path.join(process.cwd(), 'data');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const csvPath = path.join(dataDir, `claims_scores_${timestamp}.csv`);
+    const csvContent = ['Claim,Risk Score,Cluster\n'];
+    
+    sortedClaims.forEach(({ claim, score, cluster }) => {
+        const escapedClaim = `"${claim.replace(/"/g, '""')}"`;
+        csvContent.push(`${escapedClaim},${score},${cluster}\n`);
+    });
+
+    try {
+        // Ensure data directory exists
+        try {
+            await fs.access(dataDir);
+        } catch {
+            console.log('Creating data directory...');
+            await fs.mkdir(dataDir, { recursive: true });
+        }
+
+        // Write the file
+        console.log(`Writing scores to ${csvPath}...`);
+        await fs.writeFile(csvPath, csvContent.join(''));
+        
+        // Verify the file was written
+        try {
+            await fs.access(csvPath);
+            const stats = await fs.stat(csvPath);
+            if (stats.size === 0) {
+                throw new Error('CSV file was created but is empty');
+            }
+            console.log(`Claims scores saved successfully to: ${csvPath} (${stats.size} bytes)`);
+        } catch (verifyError) {
+            throw new Error(`CSV file verification failed: ${verifyError.message}`);
+        }
+    } catch (error) {
+        console.error('CRITICAL ERROR: Failed to save claims scores CSV');
+        console.error('Error details:', error);
+        console.error('Current working directory:', process.cwd());
+        console.error('Attempted to write to:', csvPath);
+        throw new Error('Failed to save claims scores CSV - terminating process');
+    }
+    
+    // Return processed claims and metadata
+    const uniqueClaims = [...new Set(sortedClaims.map(c => c.claim))];
     return {
         originalCount: rawClaims.length,
         filteredCount: filteredClaims.length,
         uniqueCount: uniqueClaims.length,
-        finalCount: scoredClaims.length,
-        claims: scoredClaims.map(c => c.claim),
-        scores: scoredClaims
+        finalCount: sortedClaims.length,
+        claims: uniqueClaims,
+        scores: sortedClaims,
+        clusters: clusterResults
     };
 }
