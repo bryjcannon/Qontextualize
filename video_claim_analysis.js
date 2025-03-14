@@ -451,6 +451,43 @@ async function searchAllDomains(query) {
 
 
 
+/**
+ * Generates summaries for each chunk of a transcript using GPT-4.
+ * @param {string} transcript - The full transcript text
+ * @returns {Promise<string[]>} Array of summaries for each chunk
+ */
+export async function generateChunkSummaries(transcript) {
+    const chunks = chunkTranscript(transcript);
+    console.log('Generating summaries for each chunk...');
+    
+    const chunkSummaries = await Promise.all(chunks.map(async (chunk, index) => {
+        console.log(`Processing chunk ${index + 1}/${chunks.length}...`);
+        const summaryPrompt = prompts.generateSummary(chunk);
+        const response = await openai.chat.completions.create({
+            model: "gpt-4-turbo-preview",
+            messages: [{ role: "user", content: summaryPrompt }]
+        });
+        return response.choices[0].message.content;
+    }));
+
+    return chunkSummaries;
+}
+
+/**
+ * Generates a final summary from individual chunk summaries.
+ * @param {string[]} chunkSummaries - Array of summaries from each transcript chunk
+ * @returns {Promise<string>} Final comprehensive summary
+ */
+export async function generateFinalSummary(chunkSummaries) {
+    console.log('Generating final summary...');
+    const finalSummaryPrompt = prompts.generateFinalSummary(chunkSummaries.join('\n\n'));
+    const finalSummaryResponse = await openai.chat.completions.create({
+        model: "gpt-4-turbo-preview",
+        messages: [{ role: "user", content: finalSummaryPrompt }]
+    });
+    return finalSummaryResponse.choices[0].message.content;
+}
+
 export {
     extractClaims,
     verifyClaims,
