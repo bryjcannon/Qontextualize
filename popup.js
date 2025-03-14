@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const button = document.getElementById('qontextualize-btn');
     const downloadBtn = document.getElementById('download-btn');
     const statusText = document.getElementById('status');
+    const fullReportCheckbox = document.getElementById('full-report-checkbox');
     
     // Initially disable download button
     downloadBtn.disabled = true;
@@ -45,6 +46,16 @@ document.addEventListener('DOMContentLoaded', async function() {
                 button.style.backgroundColor = ''; // Reset to default blue
             }, 1000);
         }
+    });
+
+    // Save checkbox state to storage
+    fullReportCheckbox.addEventListener('change', function() {
+        chrome.storage.local.set({ 'fullReportEnabled': this.checked });
+    });
+
+    // Load checkbox state from storage
+    chrome.storage.local.get('fullReportEnabled', function(data) {
+        fullReportCheckbox.checked = !!data.fullReportEnabled;
     });
 
     button.addEventListener('click', async function() {

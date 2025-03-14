@@ -18,9 +18,32 @@ Provide a JSON object with this exact structure (no additional text):
   "consensus": "current scientific consensus on this topic"
 }`,
 
-    // Generate video summary
-    generateSummary: (transcript) => `Summarize this transcript in a few sentences focusing on the main topics and scientific claims discussed:
-${transcript.slice(0, 2000)}`,
+    // Generate summary for a transcript chunk
+    generateSummary: (chunk) => `You are an expert in scientific communication. Given this portion of a video transcript, create a concise summary that:
+1. Identifies the main people involved and their roles
+2. Identifies the main scientific topics and themes
+3. Highlights key scientific claims and findings discussed
+4. Notes any significant debates or uncertainties mentioned
+5. Maintains scientific accuracy and objectivity
+
+Transcript Portion:
+${chunk}
+
+Provide a clear, factual summary in 2-3 sentences that captures the key information from this portion.`,
+
+    // Generate final summary from chunk summaries
+    generateFinalSummary: (chunkSummaries) => `You are an expert in scientific communication. Below are summaries of different portions of a video transcript. Create a comprehensive final summary that:
+1. Synthesizes the key points from all portions
+2. Identifies the main people involved and their roles
+3. Presents the main scientific topics and themes
+4. Highlights the most significant claims and findings
+5. Notes any important debates or uncertainties
+6. Maintains scientific accuracy and objectivity
+
+Chunk Summaries:
+${chunkSummaries}
+
+Provide a clear, well-organized summary in 3-4 sentences that gives a complete picture of the video's content.`,
 
     // Get scientific consensus for a topic
     getConsensus: (topic, claimText) => `What is the current scientific consensus regarding: ${topic} ${claimText}

@@ -30,7 +30,7 @@ function estimateTokenCount(text) {
  * @param {number} options.overlapTokens - Number of tokens to overlap (default 200)
  * @returns {string[]} Array of transcript chunks
  */
-function chunkTranscript(transcript, options = {}) {
+export function chunkTranscript(transcript, options = {}) {
     const {
         maxTokens = 10000,      // Target ~10K tokens per chunk
         overlapTokens = 200     // Overlap by ~200 tokens
@@ -107,22 +107,33 @@ async function extractClaims(transcript) {
     console.log('Processing claims through reduction pipeline...');
     const processedResults = await processClaims(allClaims);
     
+    // Check if full report is enabled from environment variable
+    const fullReportEnabled = process.env.FULL_REPORT === 'true';
+    
+    // Select claims to process
+    const claimsToProcess = fullReportEnabled
+        ? processedResults.claims
+        : processedResults.claims.slice(0, 10);
+    
+    console.log(`Processing ${claimsToProcess.length} claims (${fullReportEnabled ? 'full report' : 'top 10'})...`);
+    
     // Save claims summary with processing metadata
     try {
-        await saveClaimsSummary(new Set(processedResults.claims), {
+        await saveClaimsSummary(new Set(claimsToProcess), {
             processingMetadata: {
                 originalCount: processedResults.originalCount,
                 filteredCount: processedResults.filteredCount,
                 uniqueCount: processedResults.uniqueCount,
-                finalCount: processedResults.finalCount,
-                scores: processedResults.scores
+                finalCount: claimsToProcess.length,
+                scores: processedResults.scores,
+                fullReport: fullReportEnabled
             }
         });
     } catch (error) {
         console.error('Failed to save claims summary:', error);
     }
     
-    return processedResults.claims.join('\n');
+    return claimsToProcess.join('\n');
 }
 
 async function verifyClaims(claims) {

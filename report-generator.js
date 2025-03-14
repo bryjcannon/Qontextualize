@@ -1,6 +1,6 @@
 import { OpenAI } from 'openai';
 import { prompts } from './prompts.js';
-import { extractClaims, verifyClaims, extractTimestamps, fetchSources } from './video_claim_analysis.js';
+import { extractClaims, verifyClaims, extractTimestamps, fetchSources, chunkTranscript } from './video_claim_analysis.js';
 import { config as dotenvConfig } from 'dotenv';
 
 dotenvConfig();
@@ -14,19 +14,45 @@ async function generateFinalReport(transcript) {
         console.log('Verifying claims...');
         const verifiedClaims = await verifyClaims(claims);
         
+        // Generate summaries first since we want them regardless of claims
+        const chunks = chunkTranscript(transcript);
+        console.log('Generating summaries for each chunk...');
+        
+        const chunkSummaries = await Promise.all(chunks.map(async (chunk, index) => {
+            console.log(`Processing chunk ${index + 1}/${chunks.length}...`);
+            const summaryPrompt = prompts.generateSummary(chunk);
+            const response = await openai.chat.completions.create({
+                model: "gpt-4-turbo-preview",
+                messages: [{ role: "user", content: summaryPrompt }]
+            });
+            return response.choices[0].message.content;
+        }));
+        
+        // Generate final summary from chunk summaries
+        console.log('Generating final summary...');
+        const finalSummaryPrompt = prompts.generateFinalSummary(chunkSummaries.join('\n\n'));
+        const finalSummaryResponse = await openai.chat.completions.create({
+            model: "gpt-4-turbo-preview",
+            messages: [{ role: "user", content: finalSummaryPrompt }]
+        });
+        const summary = finalSummaryResponse.choices[0].message.content;
+
+        // If no claims were found or verified, return early with just the summary
+        if (!verifiedClaims || verifiedClaims.length === 0) {
+            return {
+                summary,
+                claims: [],
+                message: "No strong or potentially controversial claims were identified in this video."
+            };
+        }
+        
         console.log('Finding timestamps...');
         const timestamps = extractTimestamps(transcript, claims);
         
         const claimsList = claims.split('\n').filter(claim => claim.trim());
         let processedClaims = [];
         
-        // Generate a summary of the video and its claims
-        const summaryPrompt = prompts.generateSummary(transcript);
-        const summaryResponse = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [{ role: "user", content: summaryPrompt }]
-        });
-        const summary = summaryResponse.choices[0].message.content;
+
         
         // Fetch sources for all claims
         console.log('Fetching scientific sources...');

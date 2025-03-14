@@ -46,11 +46,14 @@ const timingMiddleware = (req, res, next) => {
 // Add timing middleware to analyze endpoint
 app.post('/api/analyze', timingMiddleware, async (req, res) => {
     try {
-        const { transcript, clientStartTime } = req.body;
+        const { transcript, clientStartTime, fullReport } = req.body;
         
         if (!transcript) {
             return res.status(400).json({ error: 'Transcript is required' });
         }
+
+        // Set full report environment variable for this request
+        process.env.FULL_REPORT = fullReport ? 'true' : 'false';
 
         console.log('Analyzing transcript...');
         const report = await generateFinalReport(transcript);

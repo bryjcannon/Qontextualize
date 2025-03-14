@@ -51,6 +51,28 @@ body {
     cursor: not-allowed;
 }
 
+.options-container {
+    margin-top: 15px;
+    padding: 8px;
+    border-top: 1px solid #eee;
+}
+
+.option-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #666;
+    cursor: pointer;
+}
+
+.option-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
 #qontextualize-btn.clicked {
     background-color: #00cc66;
 }

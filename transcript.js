@@ -104,6 +104,9 @@ async function analyzeTranscript(transcriptData, analysisKey) {
     try {
         const clientStartTime = Date.now();
         
+        // Get full report setting from storage
+        const { fullReportEnabled } = await chrome.storage.local.get('fullReportEnabled');
+        
         // Call server API to analyze transcript
         const response = await fetch(config.PROXY_API_ENDPOINT, {
             method: 'POST',
@@ -112,7 +115,8 @@ async function analyzeTranscript(transcriptData, analysisKey) {
             },
             body: JSON.stringify({
                 transcript: transcriptData.fullText,
-                clientStartTime
+                clientStartTime,
+                fullReport: fullReportEnabled
             })
         });
 
