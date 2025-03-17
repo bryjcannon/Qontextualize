@@ -2,44 +2,20 @@ import config from './config.browser.js';
 
 
 function formatSources(sources) {
-    console.log('📖 Formatting sources:', sources);
-    
-    if (!sources || !Array.isArray(sources)) {
-        console.log('⚠️ Invalid sources data:', sources);
-        return 'No sources available';
+    if (!sources || sources.length === 0) {
+        return '<div class="no-sources">No sources available for this claim</div>';
     }
-    
-    try {
-        const validSources = sources.filter(source => {
-            const isValid = source && source.url;
-            if (!isValid) {
-                console.log('❗ Filtered out invalid source:', source);
-            }
-            return isValid;
-        });
-        
-        console.log(`📋 Valid sources: ${validSources.length} of ${sources.length}`);
-        
-        const formattedSources = validSources.map(source => {
-            console.log('📕 Processing source:', source);
-            const domain = source.domain || new URL(source.url).hostname;
-            const displayText = source.title || `${domain} Source`;
-            const link = `<a href="${source.url}" target="_blank" class="source-link ${domain.split('.')[0]}">
-                ${displayText}
-                <span class="source-domain">(${domain})</span>
-            </a>`;
-            console.log('🔗 Generated link:', link);
-            return link;
-        });
 
-        const result = formattedSources.join('\n') || 'No sources available';
-        console.log('🌟 Final formatted sources:', result);
-        return result;
-    } catch (error) {
-        console.error('❌ Error formatting sources:', error);
-        console.log('📝 Raw sources data:', JSON.stringify(sources, null, 2));
-        return 'Error displaying sources';
-    }
+    return `
+        <div class="sources-list">
+            ${sources.map((source, index) => `
+                <div class="source-item">
+                    <span class="source-bullet">•</span>
+                    <span class="source-link">${source}</span>
+                </div>
+            `).join('')}
+        </div>
+    `;
 }
 
 function displayAnalysis(analysis) {
@@ -75,14 +51,6 @@ function displayAnalysis(analysis) {
         summary.innerHTML = `<strong>Summary of Claim:</strong> ${claim.summary}`;
         claimContent.appendChild(summary);
 
-        // Source
-        if (claim.source) {
-            const source = document.createElement('div');
-            source.className = 'claim-item';
-            source.innerHTML = `<strong>Source Mentioned:</strong> ${claim.source}`;
-            claimContent.appendChild(source);
-        }
-
         // Consensus
         const consensus = document.createElement('div');
         consensus.className = 'claim-item';
@@ -94,6 +62,15 @@ function displayAnalysis(analysis) {
         assessment.className = 'claim-item';
         assessment.innerHTML = `<strong>Assessment:</strong><span style="color: ${claim.color}">${claim.assessment}</span>`;
         claimContent.appendChild(assessment);
+
+        // Sources Section
+        const sourcesSection = document.createElement('div');
+        sourcesSection.className = 'sources-section';
+        sourcesSection.innerHTML = `
+            <div class="sources-header">Sources</div>
+            ${formatSources(claim.sources)}
+        `;
+        claimContent.appendChild(sourcesSection);
 
         // Agreement Status
         const agreement = document.createElement('div');
