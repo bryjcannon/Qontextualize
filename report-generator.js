@@ -1,6 +1,6 @@
 import { OpenAI } from 'openai';
 import { prompts } from './prompts.js';
-import { extractClaims, verifyClaims, extractTimestamps, fetchSources, generateChunkSummaries, generateFinalSummary, determineClaimAgreement } from './video_claim_analysis.js';
+import { extractClaims, verifyClaims, generateChunkSummaries, generateFinalSummary, determineClaimAgreement } from './video_claim_analysis.js';
 import { config as dotenvConfig } from 'dotenv';
 
 dotenvConfig();
@@ -27,8 +27,7 @@ async function generateFinalReport(transcript) {
             };
         }
         
-        console.log('Finding timestamps...');
-        const timestamps = extractTimestamps(transcript, claims);
+
 
         // Process all claims in parallel
         console.log('Processing claims...');
@@ -59,7 +58,7 @@ async function generateFinalReport(transcript) {
 
                         // Get and analyze sources for this claim
                         console.log(`📓 Processing sources for topic: ${topic}`);
-                        const sources = await fetchSources(`${topic}: ${claimText}`);
+                        const sources = [];
                         console.log(`📁 Found ${sources.length} sources for topic`);
                         
                         // Analyze source quality and relevance
@@ -106,9 +105,17 @@ async function generateFinalReport(transcript) {
                             ? verification.assessment + '\n\nNote: While this assessment is based on general scientific knowledge, we were unable to find direct scientific sources for this specific claim. Consider consulting additional academic databases or medical professionals for verification.'
                             : verification.assessment + sourceAnalysis;
 
-                        // Determine agreement status and color code
+                        // Analyze the consensus and assessment for agreement
                         const consensusAgreement = determineClaimAgreement(verification.consensus);
                         const assessmentAgreement = determineClaimAgreement(assessment);
+                        
+                        console.log('Agreement analysis:', {
+                            topic,
+                            consensusAgreement,
+                            assessmentAgreement,
+                            consensusText: verification.consensus,
+                            assessmentPreview: assessment.substring(0, 100) + '...'
+                        });
                         
                         // Use most definitive agreement status (prefer disagreement over neutral)
                         const agreementStatus = 
@@ -116,16 +123,16 @@ async function generateFinalReport(transcript) {
                             consensusAgreement === 'agrees' || assessmentAgreement === 'agrees' ? 'agrees' : 'neutral';
 
                         // Apply color based on agreement
-                        const color = {
-                            'agrees': 'green',
-                            'disagrees': 'red',
-                            'neutral': 'white'
-                        }[agreementStatus];
+                        const colors = {
+                            'agrees': '#2ecc71',     // Bright green
+                            'disagrees': '#e74c3c',  // Bright red
+                            'neutral': '#ffffff'     // White
+                        };
+                        const color = colors[agreementStatus];
 
                         const result = {
                             title: topic,
                             summary: claimText.trim(),
-                            timestamps: timestamps[topic] || [],
                             sources,
                             consensus: verification.consensus,
                             assessment,
@@ -136,9 +143,10 @@ async function generateFinalReport(transcript) {
                         console.log('📚 Final report section:', {
                             title: result.title,
                             sourcesCount: sources.length,
-                            hasTimestamps: result.timestamps?.length > 0,
+
                             hasConsensus: !!result.consensus,
-                            agreementStatus: result.agreementStatus
+                            agreementStatus: result.agreementStatus,
+                            color: result.color
                         });
 
                         return result;
@@ -147,7 +155,6 @@ async function generateFinalReport(transcript) {
                         return {
                             title: topic,
                             summary: claimText.trim(),
-                            timestamps: timestamps[topic] || [],
                             sources: [],
                             consensus: 'Error: Could not verify scientific consensus',
                             assessment: 'Error: Could not fully analyze this claim',

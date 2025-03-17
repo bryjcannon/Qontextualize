@@ -61,7 +61,9 @@ function displayAnalysis(analysis) {
 
         const claimTitle = document.createElement('h3');
         claimTitle.className = 'claim-title';
-        claimTitle.textContent = `Claim ${index + 1}: ${claim.title}`;
+        // Remove any leading numbers and dots from the title
+        const cleanTitle = claim.title.replace(/^\d+\.\s*/, '');
+        claimTitle.textContent = `Claim ${index + 1}: ${cleanTitle}`;
         claimSection.appendChild(claimTitle);
 
         const claimContent = document.createElement('div');
@@ -90,9 +92,14 @@ function displayAnalysis(analysis) {
         // Assessment
         const assessment = document.createElement('div');
         assessment.className = 'claim-item';
-        const assessmentClass = claim.assessment.toLowerCase().includes('not supported') ? ' assessment-not-supported' : '';
-        assessment.innerHTML = `<strong>Assessment:</strong><span class="${assessmentClass}">${claim.assessment}</span>`;
+        assessment.innerHTML = `<strong>Assessment:</strong><span style="color: ${claim.color}">${claim.assessment}</span>`;
         claimContent.appendChild(assessment);
+
+        // Agreement Status
+        const agreement = document.createElement('div');
+        agreement.className = 'claim-item';
+        agreement.innerHTML = `<strong>Agreement Status:</strong><span style="color: ${claim.color}">${claim.agreementStatus.charAt(0).toUpperCase() + claim.agreementStatus.slice(1)}</span>`;
+        claimContent.appendChild(agreement);
 
         claimSection.appendChild(claimContent);
         analysisContent.appendChild(claimSection);
