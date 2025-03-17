@@ -398,56 +398,62 @@ async function fetchSources(claims) {
     return sources;
 }
 
-async function searchAllDomains(query) {
-    console.log('🔍 Starting source search for query:', query);
-    
-    // Define domains with specific search modifiers and weights
-    const domains = [
-        { domain: 'ncbi.nlm.nih.gov', modifier: 'scientific research study', weight: 4 },
-        { domain: 'cdc.gov', modifier: 'guidelines evidence', weight: 3 },
-        { domain: 'who.int', modifier: 'health research', weight: 3 },
-        { domain: 'nejm.org', modifier: 'medical study', weight: 4 }
+function determineClaimAgreement(text) {
+    // Keywords indicating agreement
+    const agreementKeywords = [
+        'supports', 'supported', 'support',
+        'confirms', 'confirmed', 'confirm',
+        'validates', 'validated', 'validate',
+        'agrees', 'agreed', 'agree',
+        'correct', 'correctly',
+        'accurate', 'accurately',
+        'true', 'truth',
+        'evidence shows',
+        'research demonstrates',
+        'studies confirm',
+        'scientific consensus supports'
     ];
 
-    // Try each domain to gather sources
-    const uniqueSources = new Map();
-    
-    for (const { domain, modifier, weight } of domains) {
-        console.log(`🌐 Searching domain: ${domain}`);
-        const searchQuery = `${query} ${modifier}`;
-        
-        try {
-            const results = await fetchSourceLinks(searchQuery, domain);
-            
-            // Add domain-specific weight to results
-            const weightedResults = results.map(source => ({
-                ...source,
-                weight,
-                domainScore: weight * (results.indexOf(source) === 0 ? 1.2 : 1) // Boost first result slightly
-            }));
-            
-            weightedResults.forEach(source => {
-                if (!uniqueSources.has(source.url)) {
-                    uniqueSources.set(source.url, source);
-                }
-            });
-        } catch (error) {
-            console.error(`❌ Error searching ${domain}:`, error);
-        }
-        
-        // Add a small delay between domain searches
-        await new Promise(resolve => setTimeout(resolve, 1000));
+    // Keywords indicating disagreement
+    const disagreementKeywords = [
+        'contradicts', 'contradicted', 'contradict',
+        'refutes', 'refuted', 'refute',
+        'disputes', 'disputed', 'dispute',
+        'disagrees', 'disagreed', 'disagree',
+        'incorrect', 'incorrectly',
+        'inaccurate', 'inaccurately',
+        'false', 'untrue',
+        'no evidence',
+        'evidence does not support',
+        'research does not support',
+        'studies do not confirm',
+        'scientific consensus does not support'
+    ];
+
+    // Convert text to lowercase for case-insensitive matching
+    const lowercaseText = text.toLowerCase();
+
+    // Check for agreement keywords
+    const hasAgreement = agreementKeywords.some(keyword => 
+        lowercaseText.includes(keyword.toLowerCase())
+    );
+
+    // Check for disagreement keywords
+    const hasDisagreement = disagreementKeywords.some(keyword => 
+        lowercaseText.includes(keyword.toLowerCase())
+    );
+
+    // Determine status
+    if (hasAgreement && !hasDisagreement) {
+        return 'agrees';
+    } else if (hasDisagreement && !hasAgreement) {
+        return 'disagrees';
+    } else {
+        return 'neutral';
     }
-
-    // Sort sources by weight and domain score
-    const finalSources = Array.from(uniqueSources.values())
-        .sort((a, b) => b.domainScore - a.domainScore)
-        .slice(0, 5) // Limit to top 5 sources
-        .map(({ url, title, domain }) => ({ url, title, domain })); // Remove internal scoring
-
-    console.log(`🏁 Search complete. Selected ${finalSources.length} top sources`);
-    return finalSources;
 }
+
+export { determineClaimAgreement };
 
 
 
