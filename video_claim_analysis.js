@@ -319,20 +319,9 @@ function determineClaimAgreement(text) {
  * @returns {Promise<string[]>} Array of summaries for each chunk
  */
 export async function generateChunkSummaries(transcript) {
-    const chunks = chunkTranscript(transcript);
     console.log('Generating summaries for each chunk...');
-    
-    const chunkSummaries = await Promise.all(chunks.map(async (chunk, index) => {
-        console.log(`Processing chunk ${index + 1}/${chunks.length}...`);
-        const summaryPrompt = prompts.generateSummary(chunk);
-        const response = await openai.chat.completions.create({
-            model: "gpt-4-turbo-preview",
-            messages: [{ role: "user", content: summaryPrompt }]
-        });
-        return response.choices[0].message.content;
-    }));
-
-    return chunkSummaries;
+    const { summaries } = await processTranscript(transcript);
+    return summaries;
 }
 
 /**
@@ -353,5 +342,7 @@ export async function generateFinalSummary(chunkSummaries) {
 export {
     extractClaims,
     verifyClaims,
-    determineClaimAgreement
+    determineClaimAgreement,
+    processTranscript,
+    chunkTranscript
 };

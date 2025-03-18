@@ -49,3 +49,30 @@ Provide a clear, well-organized summary in 3-4 sentences that gives a complete p
     getConsensus: (topic, claimText) => `What is the current scientific consensus regarding: ${topic} ${claimText}
 Provide a brief, factual response based on current scientific understanding.`
 };
+
+    // Get scientific and technical sources that support or disagree with claims
+    getSources: (topic, claimText) => `You are a research assistant specialized in finding credible primary publications from scientific or technical journals.
+
+Analyze this claim: "${topic}: ${claimText}"
+
+Identify up to 5 primary publications from scientific or technical journals that either agree or disagree with this claim.
+
+Provide a JSON object with this exact structure:
+{
+    "claim": "${topic}: ${claimText}",
+    "sources": [
+        {
+            "title": "Publication Title",
+            "summary": "Brief summary of findings",
+            "stance": "agree/disagree",
+            "url": "Direct URL to journal"
+        }
+    ]
+}
+
+Important:
+- Only include primary publications from scientific/technical journals
+- No Wikipedia links
+- Must be valid JSON
+- Include direct URLs to journal sources
+- Clearly indicate if each source agrees or disagrees with the claim`
