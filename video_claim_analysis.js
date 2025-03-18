@@ -355,3 +355,84 @@ export {
     verifyClaims,
     determineClaimAgreement
 };
+
+
+/**
+ * Fetch scientific sources for verified claims
+ * @param {Object} verifiedClaims - Object containing verified claims with their analysis
+ * @returns {Promise<Object>} - Object mapping claim topics to their sources
+ */
+async function fetchSources(verifiedClaims) {
+    let sources = {};
+
+    // Create array of promises for each claim
+    const sourcePromises = Object.entries(verifiedClaims).map(async ([topic, verification]) => {
+        const claimText = verification.claim || '';
+        console.log(`Fetching sources for claim: ${topic}`);
+        
+        try {
+            const response = await openai.chat.completions.create({
+                model: "gpt-4-turbo-preview",
+                messages: [{ 
+                    role: "system", 
+                    content: "You are a scientific fact-checker. Always respond with valid JSON matching the exact schema requested."
+                }, { 
+                    role: "user", 
+                    content: prompts.getSources(claimText)
+                }],
+                response_format: { type: "json_object" }
+            });
+            
+            let text = response.choices[0].message.content.trim();
+            
+            try {
+                // Parse the JSON response
+                const sourceData = JSON.parse(text);
+                
+                // Validate and format sources
+                if (!sourceData.sources || !Array.isArray(sourceData.sources)) {
+                    throw new Error('Invalid sources format in response');
+                }
+                
+                // Format and validate each source
+                const formattedSources = sourceData.sources
+                    .filter(source => {
+                        const hasRequiredFields = source.title && source.summary && 
+                                                source.stance && source.url;
+                        if (!hasRequiredFields) {
+                            console.warn(`Skipping source with missing fields for topic '${topic}'`);
+                        }
+                        return hasRequiredFields;
+                    })
+                    .map(source => ({
+                        title: source.title,
+                        authors: source.authors || '',
+                        journal: source.journal || '',
+                        year: source.year || '',
+                        summary: source.summary,
+                        url: source.url,
+                        stance: source.stance,
+                        citations: source.citations || 0,
+                        domain: source.domain || new URL(source.url).hostname
+                    }));
+
+                sources[topic] = formattedSources;
+                return { topic, success: true };
+                
+            } catch (parseError) {
+                console.error(`JSON parsing error for claim '${topic}':`, parseError);
+                console.error('Raw response:', text);
+                sources[topic] = [];
+                return { topic, success: false, error: 'Parse error' };
+            }
+        } catch (error) {
+            console.error(`Error fetching sources for claim '${topic}':`, error);
+            sources[topic] = [];
+            return { topic, success: false, error: 'API error' };
+        }
+    });
+
+    // Wait for all source fetching to complete
+    await Promise.all(sourcePromises);
+    return sources;
+}
