@@ -1,5 +1,33 @@
 // OpenAI prompts for video claim analysis
 export const prompts = {
+    // Get scientific sources for claims
+    getSources: (claim) => `You are a research assistant specialized in finding credible primary publications from scientific or technical journals. Analyze this claim: "${claim}"
+
+Identify up to 5 primary publications from scientific or technical journals that either agree or disagree with this claim. Include for each:
+- Title
+- Brief summary of findings
+- Whether it agrees or disagrees with the claim
+- Direct URL to the journal source
+
+Provide your response in this JSON format:
+{
+    "claim": "${claim}",
+    "sources": [
+        {
+            "title": "Publication Title",
+            "summary": "Brief summary of findings",
+            "stance": "agree/disagree",
+            "url": "Direct URL to journal"
+        }
+    ]
+}
+
+Important:
+- Only include primary publications from scientific/technical journals
+- No Wikipedia links
+- Must be valid JSON
+- Include direct URLs to journal sources
+- Clearly indicate if each source agrees or disagrees with the claim`,
     // Extract claims from transcript chunks
     extractClaims: (chunk) => `Given the following transcript:
 ${chunk}
@@ -49,3 +77,31 @@ Provide a clear, well-organized summary in 3-4 sentences that gives a complete p
     getConsensus: (topic, claimText) => `What is the current scientific consensus regarding: ${topic} ${claimText}
 Provide a brief, factual response based on current scientific understanding.`
 };
+
+    getSources: (claim) => `You are a research assistant specialized in finding credible primary publications from scientific or technical journals. Analyze this claim: "${claim}"
+
+Identify up to 5 primary publications from scientific or technical journals that either agree or disagree with this claim. Include for each:
+- Title
+- Brief summary of findings
+- Whether it agrees or disagrees with the claim
+- Direct URL to the journal source
+
+Provide your response in this JSON format:
+{
+    "claim": "${claim}",
+    "sources": [
+        {
+            "title": "Publication Title",
+            "summary": "Brief summary of findings",
+            "stance": "agree/disagree",
+            "url": "Direct URL to journal"
+        }
+    ]
+}
+
+Important:
+- Only include primary publications from scientific/technical journals
+- No Wikipedia links
+- Must be valid JSON
+- Include direct URLs to journal sources
+- Clearly indicate if each source agrees or disagrees with the claim`
