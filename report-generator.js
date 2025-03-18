@@ -1,6 +1,6 @@
 import { OpenAI } from 'openai';
 import { prompts } from './prompts.js';
-import { extractClaims, verifyClaims, generateChunkSummaries, generateFinalSummary, determineClaimAgreement } from './video_claim_analysis.js';
+import { extractClaims, verifyClaims, generateChunkSummaries, generateFinalSummary, determineClaimAgreement, fetchSources } from './video_claim_analysis.js';
 import { config as dotenvConfig } from 'dotenv';
 
 dotenvConfig();
@@ -58,7 +58,7 @@ async function generateFinalReport(transcript) {
 
                         // Get and analyze sources for this claim
                         console.log(`📓 Processing sources for topic: ${topic}`);
-                        const sources = [];
+                        const sources = await fetchSources(claimText.trim());
                         console.log(`📁 Found ${sources.length} sources for topic`);
                         
                         // Analyze source quality and relevance

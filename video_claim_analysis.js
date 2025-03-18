@@ -318,7 +318,7 @@ function determineClaimAgreement(text) {
  * @param {string} transcript - The full transcript text
  * @returns {Promise<string[]>} Array of summaries for each chunk
  */
-export async function generateChunkSummaries(transcript) {
+async function generateChunkSummaries(transcript) {
     const chunks = chunkTranscript(transcript);
     console.log('Generating summaries for each chunk...');
     
@@ -340,7 +340,7 @@ export async function generateChunkSummaries(transcript) {
  * @param {string[]} chunkSummaries - Array of summaries from each transcript chunk
  * @returns {Promise<string>} Final comprehensive summary
  */
-export async function generateFinalSummary(chunkSummaries) {
+async function generateFinalSummary(chunkSummaries) {
     console.log('Generating final summary...');
     const finalSummaryPrompt = prompts.generateFinalSummary(chunkSummaries.join('\n\n'));
     const finalSummaryResponse = await openai.chat.completions.create({
@@ -350,8 +350,70 @@ export async function generateFinalSummary(chunkSummaries) {
     return finalSummaryResponse.choices[0].message.content;
 }
 
+/**
+ * Fetches scientific sources for a given claim using GPT-4.
+ * @param {string} claim - The claim to find sources for
+ * @returns {Promise<Array>} Array of source objects with metadata
+ */
+async function fetchSources(claim) {
+    if (!claim || typeof claim !== 'string') {
+        console.error('Invalid claim provided to fetchSources:', claim);
+        return [];
+    }
+
+    try {
+        console.log(`🔍 Fetching sources for claim: ${claim}`);
+        const prompt = prompts.getSources(claim);
+
+        const response = await openai.chat.completions.create({
+            model: "gpt-4-turbo-preview",
+            messages: [{ 
+                role: "system", 
+                content: "You are a scientific research assistant. Always respond with valid JSON matching the exact schema requested."
+            }, { 
+                role: "user", 
+                content: prompt 
+            }],
+            response_format: { type: "json_object" }
+        });
+
+        const result = JSON.parse(response.choices[0].message.content);
+        
+        if (!result.sources || !Array.isArray(result.sources)) {
+            console.warn('No valid sources returned for claim:', claim);
+            return [];
+        }
+
+        // Filter out invalid sources and normalize data
+        const validSources = result.sources
+            .filter(source => source && source.title && source.url)
+            .map(source => ({
+                title: source.title,
+                summary: source.summary || '',
+                stance: source.stance || 'neutral',
+                url: source.url,
+                // Optional metadata
+                authors: source.authors || '',
+                journal: source.journal || '',
+                year: source.year || '',
+                citations: source.citations || 0,
+                domain: new URL(source.url).hostname.replace(/^www\./, '')
+            }));
+
+        console.log(`📚 Found ${validSources.length} valid sources for claim`);
+        return validSources;
+
+    } catch (error) {
+        console.error('Error fetching sources:', error);
+        return [];
+    }
+}
+
 export {
     extractClaims,
     verifyClaims,
-    determineClaimAgreement
+    determineClaimAgreement,
+    generateChunkSummaries,
+    generateFinalSummary,
+    fetchSources
 };

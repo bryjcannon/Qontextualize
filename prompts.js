@@ -47,5 +47,47 @@ Provide a clear, well-organized summary in 3-4 sentences that gives a complete p
 
     // Get scientific consensus for a topic
     getConsensus: (topic, claimText) => `What is the current scientific consensus regarding: ${topic} ${claimText}
-Provide a brief, factual response based on current scientific understanding.`
+Provide a brief, factual response based on current scientific understanding.`,
+
+    // Get scientific sources for claims
+    getSources: (claim) => `You are a research assistant specialized in finding credible scientific publications. Analyze this claim: "${claim}"
+
+Identify up to 5 relevant scientific publications that address this claim. Include both supporting and opposing evidence if available. For each source:
+
+Required:
+- Title (exact publication title)
+- Summary (2-3 sentences about key findings)
+- Stance ("agrees", "disagrees", or "neutral")
+- URL (direct link to the publication)
+
+Optional if available:
+- Authors (main authors)
+- Journal (publication venue)
+- Year (publication year)
+- Citations (approximate citation count)
+
+Provide your response in this exact JSON format:
+{
+    "claim": "${claim}",
+    "sources": [
+        {
+            "title": "Full Publication Title",
+            "summary": "2-3 sentence summary of key findings",
+            "stance": "agrees/disagrees/neutral",
+            "url": "direct_url_to_publication",
+            "authors": "Author names",
+            "journal": "Journal or Conference name",
+            "year": "YYYY",
+            "citations": number
+        }
+    ]
+}
+
+Important:
+- Focus on peer-reviewed scientific publications when possible
+- Include both supporting and opposing viewpoints if they exist
+- Ensure URLs point to the actual publication (no Wikipedia)
+- Must return valid JSON that exactly matches the schema
+- Be precise about stance - use only "agrees", "disagrees", or "neutral"
+- If you're unsure about optional fields, omit them rather than guess`
 };

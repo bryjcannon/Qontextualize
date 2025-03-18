@@ -6,12 +6,12 @@ function formatSources(sources) {
     
     if (!sources || !Array.isArray(sources)) {
         console.log('⚠️ Invalid sources data:', sources);
-        return 'No sources available';
+        return null;
     }
     
     try {
         const validSources = sources.filter(source => {
-            const isValid = source && source.url;
+            const isValid = source && source.url && source.title;
             if (!isValid) {
                 console.log('❗ Filtered out invalid source:', source);
             }
@@ -20,86 +20,200 @@ function formatSources(sources) {
         
         console.log(`📋 Valid sources: ${validSources.length} of ${sources.length}`);
         
-        const formattedSources = validSources.map(source => {
+        if (validSources.length === 0) {
+            return null;
+        }
+
+        const sourcesContainer = document.createElement('div');
+        sourcesContainer.className = 'sources-section';
+        
+        // Source statistics
+        const currentYear = new Date().getFullYear();
+        const stats = {
+            totalCount: validSources.length,
+            peerReviewedCount: validSources.filter(s => s.journal).length,
+            recentSourceCount: validSources.filter(s => s.year && currentYear - parseInt(s.year) <= 3).length,
+            domains: Object.entries(validSources.reduce((acc, s) => {
+                const domain = new URL(s.url).hostname.replace('www.', '');
+                acc[domain] = (acc[domain] || 0) + 1;
+                return acc;
+            }, {})).sort((a, b) => b[1] - a[1])
+        };
+
+        const statsDiv = document.createElement('div');
+        statsDiv.className = 'source-stats';
+        statsDiv.innerHTML = `
+            <strong>Source Analysis:</strong>
+            <ul>
+                <li>📚 ${stats.totalCount} scientific source${stats.totalCount !== 1 ? 's' : ''}</li>
+                ${stats.peerReviewedCount ? `<li>✅ ${stats.peerReviewedCount} peer-reviewed publication${stats.peerReviewedCount !== 1 ? 's' : ''}</li>` : ''}
+                ${stats.recentSourceCount ? `<li>🕒 ${stats.recentSourceCount} source${stats.recentSourceCount !== 1 ? 's' : ''} from the past 3 years</li>` : ''}
+                ${stats.domains.length ? `<li>🌐 Sources from: ${stats.domains.map(([domain, count]) => `${domain} (${count})`).join(', ')}</li>` : ''}
+            </ul>
+        `;
+        sourcesContainer.appendChild(statsDiv);
+
+        // Sources list
+        validSources.forEach(source => {
             console.log('📕 Processing source:', source);
-            const domain = source.domain || new URL(source.url).hostname;
-            const displayText = source.title || `${domain} Source`;
-            const link = `<a href="${source.url}" target="_blank" class="source-link ${domain.split('.')[0]}">
-                ${displayText}
-                <span class="source-domain">(${domain})</span>
-            </a>`;
-            console.log('🔗 Generated link:', link);
-            return link;
+            const sourceItem = document.createElement('div');
+            sourceItem.className = 'source-item';
+
+            // Title with link
+            const titleLink = document.createElement('a');
+            titleLink.href = source.url;
+            titleLink.target = '_blank';
+            titleLink.className = 'source-title';
+            titleLink.textContent = source.title;
+            sourceItem.appendChild(titleLink);
+
+            // Metadata
+            const meta = document.createElement('div');
+            meta.className = 'source-meta';
+            const metaParts = [];
+            if (source.authors) metaParts.push(`👥 ${source.authors}`);
+            if (source.journal) {
+                metaParts.push(`📰 ${source.journal}`);
+                const peerReviewedBadge = document.createElement('span');
+                peerReviewedBadge.className = 'peer-reviewed-badge';
+                peerReviewedBadge.textContent = 'Peer Reviewed';
+                meta.appendChild(document.createTextNode(metaParts.join(' • ')));
+                meta.appendChild(peerReviewedBadge);
+            } else {
+                meta.textContent = metaParts.join(' • ');
+            }
+            sourceItem.appendChild(meta);
+
+            // Additional metadata
+            const additionalMeta = document.createElement('div');
+            additionalMeta.className = 'source-meta';
+            const additionalParts = [];
+            if (source.year) additionalParts.push(`📅 ${source.year}`);
+            if (source.citations) additionalParts.push(`📊 ${source.citations} citations`);
+            if (additionalParts.length > 0) {
+                additionalMeta.textContent = additionalParts.join(' • ');
+                sourceItem.appendChild(additionalMeta);
+            }
+
+            // Summary
+            if (source.summary) {
+                const summary = document.createElement('div');
+                summary.className = 'source-summary';
+                summary.textContent = source.summary;
+                sourceItem.appendChild(summary);
+            }
+
+            // Stance with icon
+            if (source.stance) {
+                const stance = document.createElement('div');
+                stance.className = `source-stance stance-${source.stance.toLowerCase()}`;
+                const stanceIcon = {
+                    'agrees': '✅',
+                    'disagrees': '❌',
+                    'neutral': '⚖️'
+                }[source.stance.toLowerCase()] || '•';
+                stance.textContent = `${stanceIcon} ${source.stance.charAt(0).toUpperCase() + source.stance.slice(1)}`;
+                sourceItem.appendChild(stance);
+            }
+
+            sourcesContainer.appendChild(sourceItem);
         });
 
-        const result = formattedSources.join('\n') || 'No sources available';
-        console.log('🌟 Final formatted sources:', result);
-        return result;
+        return sourcesContainer;
     } catch (error) {
         console.error('❌ Error formatting sources:', error);
         console.log('📝 Raw sources data:', JSON.stringify(sources, null, 2));
-        return 'Error displaying sources';
+        return null;
     }
 }
 
 function displayAnalysis(analysis) {
+    if (!analysis) {
+        console.error('❌ No analysis data provided');
+        return;
+    }
+
     // Display video title
     const videoTitle = document.getElementById('video-title');
     videoTitle.textContent = `Analysis of Strong Claims in ${analysis.videoTitle || 'Video'}`;
 
     // Display video summary
     const videoSummary = document.getElementById('video-summary');
-    videoSummary.textContent = analysis.summary;
+    videoSummary.textContent = analysis.summary || 'No summary available';
 
     // Clear and prepare analysis content
     const analysisContent = document.getElementById('analysis-content');
     analysisContent.innerHTML = '';
 
+    if (!analysis.claims || !Array.isArray(analysis.claims) || analysis.claims.length === 0) {
+        analysisContent.innerHTML = '<div class="claim-section">No claims to analyze</div>';
+        return;
+    }
+
     // Display claims
     analysis.claims.forEach((claim, index) => {
         const claimSection = document.createElement('div');
+        claimSection.className = 'claim-section';
 
+        // Claim title
         const claimTitle = document.createElement('h3');
         claimTitle.className = 'claim-title';
-        // Remove any leading numbers and dots from the title
-        const cleanTitle = claim.title.replace(/^\d+\.\s*/, '');
-        claimTitle.textContent = `Claim ${index + 1}: ${cleanTitle}`;
+        const titleText = typeof claim === 'object' ? 
+            (claim.title || claim.topic || claim.claim || `Claim ${index + 1}`) :
+            claim;
+        claimTitle.textContent = `Claim ${index + 1}: ${titleText.replace(/^\d+\.\s*/, '')}`;
         claimSection.appendChild(claimTitle);
 
         const claimContent = document.createElement('div');
         claimContent.className = 'claim-content';
 
         // Summary
-        const summary = document.createElement('div');
-        summary.className = 'claim-item';
-        summary.innerHTML = `<strong>Summary of Claim:</strong> ${claim.summary}`;
-        claimContent.appendChild(summary);
-
-        // Source
-        if (claim.source) {
-            const source = document.createElement('div');
-            source.className = 'claim-item';
-            source.innerHTML = `<strong>Source Mentioned:</strong> ${claim.source}`;
-            claimContent.appendChild(source);
+        if (claim.summary || titleText) {
+            const summary = document.createElement('div');
+            summary.className = 'claim-item';
+            summary.innerHTML = `<strong>Summary:</strong> ${claim.summary || titleText}`;
+            claimContent.appendChild(summary);
         }
 
-        // Consensus
-        const consensus = document.createElement('div');
-        consensus.className = 'claim-item';
-        consensus.innerHTML = `<strong>Scientific Consensus:</strong> ${claim.consensus}`;
-        claimContent.appendChild(consensus);
+        // Consensus with icon
+        if (claim.consensus) {
+            const consensus = document.createElement('div');
+            consensus.className = 'claim-item';
+            consensus.innerHTML = `<strong>🔍 Scientific Consensus:</strong> ${claim.consensus}`;
+            claimContent.appendChild(consensus);
+        }
 
-        // Assessment
-        const assessment = document.createElement('div');
-        assessment.className = 'claim-item';
-        assessment.innerHTML = `<strong>Assessment:</strong><span style="color: ${claim.color}">${claim.assessment}</span>`;
-        claimContent.appendChild(assessment);
+        // Assessment with icon
+        if (claim.assessment) {
+            const assessment = document.createElement('div');
+            assessment.className = 'claim-item';
+            const color = claim.color || 'inherit';
+            assessment.innerHTML = `<strong>📊 Assessment:</strong> <span style="color: ${color}">${claim.assessment}</span>`;
+            claimContent.appendChild(assessment);
+        }
 
-        // Agreement Status
-        const agreement = document.createElement('div');
-        agreement.className = 'claim-item';
-        agreement.innerHTML = `<strong>Agreement Status:</strong><span style="color: ${claim.color}">${claim.agreementStatus.charAt(0).toUpperCase() + claim.agreementStatus.slice(1)}</span>`;
-        claimContent.appendChild(agreement);
+        // Sources Section
+        if (claim.sources && Array.isArray(claim.sources)) {
+            const sourcesElement = formatSources(claim.sources);
+            if (sourcesElement) {
+                claimContent.appendChild(sourcesElement);
+            }
+        }
+
+        // Agreement Status with icon
+        if (claim.agreementStatus) {
+            const agreement = document.createElement('div');
+            agreement.className = 'claim-item';
+            const color = claim.color || 'inherit';
+            const icon = {
+                'agrees': '✅',
+                'disagrees': '❌',
+                'neutral': '⚖️'
+            }[claim.agreementStatus.toLowerCase()] || '•';
+            const status = claim.agreementStatus.charAt(0).toUpperCase() + claim.agreementStatus.slice(1);
+            agreement.innerHTML = `<strong>${icon} Agreement Status:</strong> <span style="color: ${color}">${status}</span>`;
+            claimContent.appendChild(agreement);
+        }
 
         claimSection.appendChild(claimContent);
         analysisContent.appendChild(claimSection);
