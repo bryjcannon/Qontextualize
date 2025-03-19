@@ -216,7 +216,9 @@ async function verifyClaims(claims) {
 }
 
 function determineClaimAgreement(text) {
-    if (!text) return 'neutral';
+    if (!text) return 'Neutral';
+    
+    console.log('Determining claim agreement for text:', text?.substring(0, 100));
 
     // Keywords indicating agreement
     const agreementPatterns = [
@@ -269,48 +271,41 @@ function determineClaimAgreement(text) {
     // Check for negations before agreement keywords
     const negationPattern = '(not|no|never|doesn\'t|does not|didn\'t|did not) ';
     
-    // Count agreement and disagreement matches
-    let agreementScore = 0;
-    let disagreementScore = 0;
-
-    // Check agreement patterns
-    agreementPatterns.forEach(pattern => {
+    // First check disagreement patterns
+    for (const pattern of disagreementPatterns) {
         const regex = new RegExp(pattern, 'i');
         const negatedRegex = new RegExp(negationPattern + pattern, 'i');
         
         if (regex.test(normalizedText)) {
-            // If there's a match but it's negated, add to disagreement
-            if (negatedRegex.test(normalizedText)) {
-                disagreementScore++;
-            } else {
-                agreementScore++;
+            // If there's a match and it's not negated, return disagree
+            if (!negatedRegex.test(normalizedText)) {
+                return 'Oppose';
             }
         }
-    });
-
-    // Check disagreement patterns
-    disagreementPatterns.forEach(pattern => {
-        const regex = new RegExp(pattern, 'i');
-        const negatedRegex = new RegExp(negationPattern + pattern, 'i');
-        
-        if (regex.test(normalizedText)) {
-            // If there's a match but it's negated, add to agreement
-            if (negatedRegex.test(normalizedText)) {
-                agreementScore++;
-            } else {
-                disagreementScore++;
-            }
-        }
-    });
-
-    // Determine final status based on scores
-    if (agreementScore > disagreementScore) {
-        return 'agrees';
-    } else if (disagreementScore > agreementScore) {
-        return 'disagrees';
-    } else {
-        return 'neutral';
     }
+
+    // Then check agreement patterns
+    let hasAgreement = false;
+    for (const pattern of agreementPatterns) {
+        const regex = new RegExp(pattern, 'i');
+        const negatedRegex = new RegExp(negationPattern + pattern, 'i');
+        
+        if (regex.test(normalizedText)) {
+            // If there's a match and it's not negated
+            if (!negatedRegex.test(normalizedText)) {
+                hasAgreement = true;
+                break;
+            }
+        }
+    }
+
+    // If we found agreement patterns and no disagreement patterns
+    if (hasAgreement) {
+        return 'Support';
+    }
+
+    // If no clear patterns were found
+    return 'Neutral';
 }
 
 /**

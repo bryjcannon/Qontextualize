@@ -106,8 +106,18 @@ async function generateFinalReport(transcript) {
                             : verification.assessment;
 
                         // Analyze the consensus and assessment for agreement
+                        console.log('Analyzing text:', {
+                            consensus: verification.consensus?.substring(0, 100),
+                            assessment: assessment?.substring(0, 100)
+                        });
+                        
                         const consensusAgreement = determineClaimAgreement(verification.consensus);
                         const assessmentAgreement = determineClaimAgreement(assessment);
+                        
+                        console.log('Initial agreement results:', {
+                            consensusAgreement,
+                            assessmentAgreement
+                        });
                         
                         console.log('Agreement analysis:', {
                             topic,
@@ -117,16 +127,30 @@ async function generateFinalReport(transcript) {
                             assessmentPreview: assessment.substring(0, 100) + '...'
                         });
                         
-                        // Use most definitive agreement status (prefer disagreement over neutral)
+                        // Use most definitive agreement status (prefer opposition over neutral)
                         const agreementStatus = 
-                            consensusAgreement === 'disagrees' || assessmentAgreement === 'disagrees' ? 'disagrees' :
-                            consensusAgreement === 'agrees' || assessmentAgreement === 'agrees' ? 'agrees' : 'neutral';
+                            consensusAgreement === 'Oppose' || assessmentAgreement === 'Oppose' ? 'Oppose' :
+                            consensusAgreement === 'Support' || assessmentAgreement === 'Support' ? 'Support' : 'Neutral';
+                        
+                        console.log('Agreement status determined:', {
+                            consensusAgreement,
+                            assessmentAgreement,
+                            finalStatus: agreementStatus,
+                            consensusText: verification.consensus?.substring(0, 100),
+                            assessmentText: assessment?.substring(0, 100)
+                        });
+                        
+                        // Force the status to be one of our three values
+                        if (!['Support', 'Oppose', 'Neutral'].includes(agreementStatus)) {
+                            console.warn('Invalid agreement status detected:', agreementStatus);
+                            agreementStatus = 'Neutral';
+                        }
 
                         // Apply color based on agreement
                         const colors = {
-                            'agrees': '#2ecc71',     // Bright green
-                            'disagrees': '#e74c3c',  // Bright red
-                            'neutral': '#ffffff'     // White
+                            'Support': '#2ecc71',     // Bright green
+                            'Oppose': '#e74c3c',  // Bright red
+                            'Neutral': '#ffffff'     // White
                         };
                         const color = colors[agreementStatus];
 
@@ -159,7 +183,7 @@ async function generateFinalReport(transcript) {
                             consensus: 'Error: Could not verify scientific consensus',
                             assessment: 'Error: Could not fully analyze this claim',
                             color: 'white',
-                            agreementStatus: 'neutral'
+                            agreementStatus: 'Neutral'
                         };
                     }
                 })

@@ -209,18 +209,17 @@ function displayAnalysis(analysis) {
             }
         }
 
-        // Agreement Status with icon
+        // Claim Status with icon
         if (claim.agreementStatus) {
             const agreement = document.createElement('div');
             agreement.className = 'claim-item';
             const color = claim.color || 'inherit';
             const icon = {
-                'agrees': '✅',
-                'disagrees': '❌',
-                'neutral': '⚖️'
-            }[claim.agreementStatus.toLowerCase()] || '•';
-            const status = claim.agreementStatus.charAt(0).toUpperCase() + claim.agreementStatus.slice(1);
-            agreement.innerHTML = `<strong>${icon} Agreement Status:</strong> <span style="color: ${color}">${status}</span>`;
+                'Support': '✅',
+                'Oppose': '❌',
+                'Neutral': '⚖️'
+            }[claim.agreementStatus] || '•';
+            agreement.innerHTML = `<strong>${icon} Claim Status:</strong> <span style="color: ${color}">${claim.agreementStatus}</span>`;
             claimContent.appendChild(agreement);
         }
 

@@ -57,7 +57,7 @@ Identify up to 5 relevant scientific publications that address this claim. Inclu
 Required:
 - Title (exact publication title)
 - Summary (2-3 sentences about key findings)
-- Stance ("agrees", "disagrees", or "neutral")
+- Stance ("Support", "Oppose", or "Neutral")
 - URL (direct link to the publication)
 
 Optional if available:
@@ -73,7 +73,7 @@ Provide your response in this exact JSON format:
         {
             "title": "Full Publication Title",
             "summary": "2-3 sentence summary of key findings",
-            "stance": "agrees/disagrees/neutral",
+            "stance": "Support/Oppose/Neutral",
             "url": "direct_url_to_publication",
             "authors": "Author names",
             "journal": "Journal or Conference name",
@@ -88,6 +88,6 @@ Important:
 - Include both supporting and opposing viewpoints if they exist
 - Ensure URLs point to the actual publication (no Wikipedia)
 - Must return valid JSON that exactly matches the schema
-- Be precise about stance - use only "agrees", "disagrees", or "neutral"
+- Be precise about stance - use only "Support", "Oppose", or "Neutral"
 - If you're unsure about optional fields, omit them rather than guess`
 };
