@@ -242,6 +242,8 @@ function determineClaimAgreement(text) {
 
     // Keywords indicating disagreement
     const disagreementPatterns = [
+        'no (credible |scientific |empirical )?(evidence|support|basis)',
+        'no link',
         'contradicts?( the)?( claim| statement| assertion)?',
         'refutes?( the)?( claim| statement| assertion)?',
         'disputes?( the)?( claim| statement| assertion)?',
@@ -272,29 +274,39 @@ function determineClaimAgreement(text) {
     const negationPattern = '(not|no|never|doesn\'t|does not|didn\'t|did not) ';
     
     // First check disagreement patterns
+    console.log('Checking disagreement patterns...');
     for (const pattern of disagreementPatterns) {
         const regex = new RegExp(pattern, 'i');
         const negatedRegex = new RegExp(negationPattern + pattern, 'i');
         
         if (regex.test(normalizedText)) {
+            console.log('Found disagreement pattern:', pattern);
             // If there's a match and it's not negated, return disagree
             if (!negatedRegex.test(normalizedText)) {
+                console.log('Pattern is not negated, returning Oppose');
                 return 'Oppose';
+            } else {
+                console.log('Pattern is negated, continuing search...');
             }
         }
     }
 
     // Then check agreement patterns
+    console.log('Checking agreement patterns...');
     let hasAgreement = false;
     for (const pattern of agreementPatterns) {
         const regex = new RegExp(pattern, 'i');
         const negatedRegex = new RegExp(negationPattern + pattern, 'i');
         
         if (regex.test(normalizedText)) {
+            console.log('Found agreement pattern:', pattern);
             // If there's a match and it's not negated
             if (!negatedRegex.test(normalizedText)) {
+                console.log('Pattern is not negated, marking as agreement');
                 hasAgreement = true;
                 break;
+            } else {
+                console.log('Pattern is negated, continuing search...');
             }
         }
     }

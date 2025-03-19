@@ -106,17 +106,18 @@ async function generateFinalReport(transcript) {
                             : verification.assessment;
 
                         // Analyze the consensus and assessment for agreement
-                        console.log('Analyzing text:', {
-                            consensus: verification.consensus?.substring(0, 100),
-                            assessment: assessment?.substring(0, 100)
-                        });
+                        console.log('\nProcessing claim:', topic);
+                        console.log('Consensus text:', verification.consensus);
+                        console.log('Assessment text:', assessment);
                         
                         const consensusAgreement = determineClaimAgreement(verification.consensus);
                         const assessmentAgreement = determineClaimAgreement(assessment);
                         
-                        console.log('Initial agreement results:', {
+                        console.log('Agreement analysis:', {
                             consensusAgreement,
-                            assessmentAgreement
+                            assessmentAgreement,
+                            consensusHasNoEvidence: verification.consensus?.toLowerCase().includes('no evidence'),
+                            assessmentHasNoEvidence: assessment?.toLowerCase().includes('no evidence')
                         });
                         
                         console.log('Agreement analysis:', {
