@@ -196,6 +196,15 @@ function displayAnalysis(analysis) {
         if (claim.sources && Array.isArray(claim.sources)) {
             const sourcesElement = formatSources(claim.sources);
             if (sourcesElement) {
+                // Create toggle button
+                const toggleButton = document.createElement('button');
+                toggleButton.className = 'sources-toggle';
+                toggleButton.textContent = 'Sources';
+                toggleButton.onclick = function() {
+                    this.classList.toggle('expanded');
+                    sourcesElement.classList.toggle('expanded');
+                };
+                claimContent.appendChild(toggleButton);
                 claimContent.appendChild(sourcesElement);
             }
         }
