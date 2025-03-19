@@ -103,7 +103,7 @@ async function generateFinalReport(transcript) {
                         
                         const assessment = sources.length === 0
                             ? verification.assessment + '\n\nNote: While this assessment is based on general scientific knowledge, we were unable to find direct scientific sources for this specific claim. Consider consulting additional academic databases or medical professionals for verification.'
-                            : verification.assessment + sourceAnalysis;
+                            : verification.assessment;
 
                         // Analyze the consensus and assessment for agreement
                         const consensusAgreement = determineClaimAgreement(verification.consensus);
