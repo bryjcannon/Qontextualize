@@ -105,41 +105,9 @@ async function generateFinalReport(transcript) {
                             ? verification.assessment + '\n\nNote: While this assessment is based on general scientific knowledge, we were unable to find direct scientific sources for this specific claim. Consider consulting additional academic databases or medical professionals for verification.'
                             : verification.assessment;
 
-                        // Analyze the consensus and assessment for agreement
-                        console.log('\nProcessing claim:', topic);
-                        console.log('Consensus text:', verification.consensus);
-                        console.log('Assessment text:', assessment);
-                        
-                        const consensusAgreement = determineClaimAgreement(verification.consensus);
-                        const assessmentAgreement = determineClaimAgreement(assessment);
-                        
-                        console.log('Agreement analysis:', {
-                            consensusAgreement,
-                            assessmentAgreement,
-                            consensusHasNoEvidence: verification.consensus?.toLowerCase().includes('no evidence'),
-                            assessmentHasNoEvidence: assessment?.toLowerCase().includes('no evidence')
-                        });
-                        
-                        console.log('Agreement analysis:', {
-                            topic,
-                            consensusAgreement,
-                            assessmentAgreement,
-                            consensusText: verification.consensus,
-                            assessmentPreview: assessment.substring(0, 100) + '...'
-                        });
-                        
-                        // Use most definitive agreement status (prefer opposition over neutral)
-                        const agreementStatus = 
-                            consensusAgreement === 'Oppose' || assessmentAgreement === 'Oppose' ? 'Oppose' :
-                            consensusAgreement === 'Support' || assessmentAgreement === 'Support' ? 'Support' : 'Neutral';
-                        
-                        console.log('Agreement status determined:', {
-                            consensusAgreement,
-                            assessmentAgreement,
-                            finalStatus: agreementStatus,
-                            consensusText: verification.consensus?.substring(0, 100),
-                            assessmentText: assessment?.substring(0, 100)
-                        });
+                        // Combine consensus and assessment for sentiment analysis
+                        const combinedText = `${verification.consensus || ''} ${assessment || ''}`;
+                        const agreementStatus = determineClaimAgreement(combinedText);
                         
                         // Force the status to be one of our three values
                         if (!['Support', 'Oppose', 'Neutral'].includes(agreementStatus)) {

@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
+import Sentiment from 'sentiment';
 import { prompts } from './prompts.js';
 import config from './config.server.js';
 
@@ -215,108 +216,37 @@ async function verifyClaims(claims) {
     return verifications;
 }
 
+const sentiment = new Sentiment();
+
 function determineClaimAgreement(text) {
     if (!text) return 'Neutral';
     
-    console.log('Determining claim agreement for text:', text?.substring(0, 100));
-
-    // Keywords indicating agreement
-    const agreementPatterns = [
-        'supports?( the)?( claim| statement| assertion)?',
-        'confirms?( the)?( claim| statement| assertion)?',
-        'validates?( the)?( claim| statement| assertion)?',
-        'agrees?( with)?( the)?( claim| statement| assertion)?',
-        'correct(ly)?',
-        'accurate(ly)?',
-        'true',
-        '(evidence|research|studies|data|findings|results) (shows?|demonstrates?|indicates?|confirms?|validates?|supports?)',
-        'scientific consensus supports?',
-        'consistent with( the)?( current)?( scientific)? evidence',
-        'well(-| )established( fact| finding)?',
-        'proven',
-        'verified',
-        'conclusive(ly)?( evidence| proof)?',
-        'strong(ly)?( evidence| support)?',
-        'clear(ly)?( evidence| support)?'
-    ];
-
-    // Keywords indicating disagreement
-    const disagreementPatterns = [
-        'no (credible |scientific |empirical )?(evidence|support|basis)',
-        'no link',
-        'contradicts?( the)?( claim| statement| assertion)?',
-        'refutes?( the)?( claim| statement| assertion)?',
-        'disputes?( the)?( claim| statement| assertion)?',
-        'disagrees?( with)?( the)?( claim| statement| assertion)?',
-        'incorrect(ly)?',
-        'inaccurate(ly)?',
-        'false',
-        'untrue',
-        '(no|limited|little|weak) (supporting )?evidence',
-        '(evidence|research|studies|data|findings|results) (does|do) not support',
-        'scientific consensus (does not|doesn\'t) support',
-        'lacks?( the)?( scientific| empirical)? (evidence|support|basis)',
-        'insufficient( scientific)? evidence',
-        'misleading',
-        'unproven',
-        'unverified',
-        'questionable',
-        'doubtful',
-        'uncertain',
-        'controversial',
-        'disputed'
-    ];
-
-    // Convert text to lowercase and normalize whitespace
-    const normalizedText = text.toLowerCase().replace(/\s+/g, ' ');
-
-    // Check for negations before agreement keywords
-    const negationPattern = '(not|no|never|doesn\'t|does not|didn\'t|did not) ';
-    
-    // First check disagreement patterns
-    console.log('Checking disagreement patterns...');
-    for (const pattern of disagreementPatterns) {
-        const regex = new RegExp(pattern, 'i');
-        const negatedRegex = new RegExp(negationPattern + pattern, 'i');
-        
-        if (regex.test(normalizedText)) {
-            console.log('Found disagreement pattern:', pattern);
-            // If there's a match and it's not negated, return disagree
-            if (!negatedRegex.test(normalizedText)) {
-                console.log('Pattern is not negated, returning Oppose');
-                return 'Oppose';
-            } else {
-                console.log('Pattern is negated, continuing search...');
-            }
+    const negativeKeywords = ['incorrect', 'misleading', 'unverified', 'false', 'not supported', 'unsupported', 'inaccurate', 'contrary', 'refuted'];
+    const options = {
+        extras: {
+            'unsupported': -3,
+            'refuted': -4,
+            'inaccurate': -3,
+            'validated': 3,
+            'confirmed': 2,
+            'misleading': -3,
+            'unverified': -2,
+            'incorrect': -3,
+            'false': -2,
+            'contrary': -2
         }
-    }
+    };
 
-    // Then check agreement patterns
-    console.log('Checking agreement patterns...');
-    let hasAgreement = false;
-    for (const pattern of agreementPatterns) {
-        const regex = new RegExp(pattern, 'i');
-        const negatedRegex = new RegExp(negationPattern + pattern, 'i');
-        
-        if (regex.test(normalizedText)) {
-            console.log('Found agreement pattern:', pattern);
-            // If there's a match and it's not negated
-            if (!negatedRegex.test(normalizedText)) {
-                console.log('Pattern is not negated, marking as agreement');
-                hasAgreement = true;
-                break;
-            } else {
-                console.log('Pattern is negated, continuing search...');
-            }
-        }
-    }
+    const textLower = text.toLowerCase();
+    const containsNegative = negativeKeywords.some(keyword => textLower.includes(keyword));
+    const sentimentResult = sentiment.analyze(text, options);
 
-    // If we found agreement patterns and no disagreement patterns
-    if (hasAgreement) {
+    if (containsNegative || sentimentResult.score < 0) {
+        return 'Oppose';
+    } else if (sentimentResult.score > 0) {
         return 'Support';
     }
 
-    // If no clear patterns were found
     return 'Neutral';
 }
 
