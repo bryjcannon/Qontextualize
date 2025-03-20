@@ -87,8 +87,12 @@ import { saveClaimsSummary } from './utils/claims_record.js';
 
 import { processClaims } from './utils/claims_processor.js';
 
-async function extractClaims(transcript) {
-    const chunks = chunkTranscript(transcript);
+/**
+ * Extract claims from transcript chunks.
+ * @param {string[]} chunks - Array of transcript chunks
+ * @returns {Promise<string>} Processed claims joined by newlines
+ */
+async function extractClaims(chunks) {
     let allClaims = [];
 
     // Extract initial claims from chunks
@@ -235,8 +239,12 @@ function determineClaimAgreement(verification) {
  * @param {string} transcript - The full transcript text
  * @returns {Promise<string[]>} Array of summaries for each chunk
  */
-async function generateChunkSummaries(transcript) {
-    const chunks = chunkTranscript(transcript);
+/**
+ * Generates summaries for each chunk of a transcript using GPT-4.
+ * @param {string[]} chunks - Array of transcript chunks
+ * @returns {Promise<string[]>} Array of summaries for each chunk
+ */
+async function generateChunkSummaries(chunks) {
     console.log('Generating summaries for each chunk...');
     
     const chunkSummaries = await Promise.all(chunks.map(async (chunk, index) => {
@@ -326,10 +334,48 @@ async function fetchSources(claim) {
     }
 }
 
+/**
+ * Process a transcript through the complete analysis pipeline.
+ * This function orchestrates the chunking, claim extraction, and summary generation.
+ * 
+ * @param {Object} transcript - The transcript object to process
+ * @returns {Promise<Object>} Object containing claims and final summary
+ */
+async function processTranscript(transcript) {
+    try {
+        // Step 1: Break transcript into chunks
+        console.log('Breaking transcript into chunks...');
+        const chunks = await chunkTranscript(transcript);
+        
+        // Step 2: Extract claims from the chunks
+        console.log('Extracting claims from transcript...');
+        const claims = await extractClaims(chunks);
+        
+        // Step 3: Generate summaries for each chunk
+        console.log('Generating chunk summaries...');
+        const chunkSummaries = await generateChunkSummaries(chunks);
+        
+        // Step 4: Generate final summary from chunk summaries
+        console.log('Generating final summary...');
+        const finalSummaryResponse = await generateFinalSummary(chunkSummaries);
+        
+        return {
+            claims,
+            finalSummaryResponse,
+            chunks,  // Including chunks in case needed downstream
+            chunkSummaries  // Including chunk summaries in case needed downstream
+        };
+    } catch (error) {
+        console.error('Error processing transcript:', error);
+        throw error;
+    }
+}
+
 export {
     extractClaims,
     verifyClaims,
     determineClaimAgreement,
+    processTranscript,
     generateChunkSummaries,
     generateFinalSummary,
     fetchSources

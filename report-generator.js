@@ -1,6 +1,6 @@
 import { OpenAI } from 'openai';
 import { prompts } from './prompts.js';
-import { extractClaims, verifyClaims, generateChunkSummaries, generateFinalSummary, determineClaimAgreement, fetchSources } from './video_claim_analysis.js';
+import { processTranscript, verifyClaims, determineClaimAgreement, fetchSources } from './video_claim_analysis.js';
 import { config as dotenvConfig } from 'dotenv';
 
 dotenvConfig();
@@ -8,20 +8,16 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 async function generateFinalReport(transcript) {
     try {
-        console.log('Extracting claims...');
-        const claims = await extractClaims(transcript);
+        // Process transcript to get claims and summary
+        const { claims, finalSummaryResponse } = await processTranscript(transcript);
         
         console.log('Verifying claims...');
         const verifiedClaims = await verifyClaims(claims);
-        
-        // Generate summaries first since we want them regardless of claims
-        const chunkSummaries = await generateChunkSummaries(transcript);
-        const summary = await generateFinalSummary(chunkSummaries);
 
         // If no claims were found or verified, return early with just the summary
         if (!verifiedClaims || verifiedClaims.length === 0) {
             return {
-                summary,
+                summary: finalSummaryResponse,
                 claims: [],
                 message: "No strong or potentially controversial claims were identified in this video."
             };
@@ -162,7 +158,7 @@ async function generateFinalReport(transcript) {
         
         return {
             videoTitle: 'Video Analysis',  // This will be set by the frontend
-            summary,
+            summary: finalSummaryResponse,
             claims: processedClaims
         };
     } catch (error) {
