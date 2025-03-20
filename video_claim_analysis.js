@@ -169,7 +169,7 @@ async function verifyClaims(claims) {
                     const analysis = JSON.parse(text);
                     
                     // Validate required fields
-                    if (!analysis.topic || !analysis.confidence || !analysis.assessment || !analysis.evidence || !analysis.consensus) {
+                    if (!analysis.topic || !analysis.confidence || !analysis.assessment || !analysis.evidence || !analysis.consensus || !analysis.sentiment) {
                         throw new Error('Missing required fields in JSON response');
                     }
                     

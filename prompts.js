@@ -13,9 +13,10 @@ Provide a JSON object with this exact structure (no additional text):
 {
   "topic": "${topic}",
   "confidence": "High/Medium/Low",
-  "assessment": "brief factual assessment of the claim's accuracy",
+  "assessment": "detailed factual assessment of the claim's accuracy",
   "evidence": ["key evidence point 1", "key evidence point 2"],
   "consensus": "current scientific consensus on this topic"
+  "sentiment": "Support/Oppose/Neutral"
 }`,
 
     // Generate summary for a transcript chunk
