@@ -31,11 +31,18 @@ async function generateFinalReport(transcript) {
 
         // Process all claims in parallel
         console.log('Processing claims...');
-        const processedClaims = await Promise.all(
+        let processedClaims = await Promise.all(
             claims.split('\n')
                 .filter(claim => claim.trim() && claim.includes(':'))
                 .map(async claim => {
                     const [topic, claimText] = claim.split(':', 2);
+                    
+                    // Skip claims with empty or very short text
+                    const words = claimText.trim().split(/\s+/);
+                    if (words.length <= 5) {
+                        console.log(`Skipping claim '${topic}' due to insufficient length (${words.length} words)`);
+                        return null;
+                    }
                     console.log(`Processing claim: ${topic}`);
                     
                     try {
@@ -144,18 +151,14 @@ async function generateFinalReport(transcript) {
                         return result;
                     } catch (error) {
                         console.error(`Error processing claim '${topic}':`, error);
-                        return {
-                            title: topic,
-                            summary: claimText.trim(),
-                            sources: [],
-                            consensus: 'Error: Could not verify scientific consensus',
-                            assessment: 'Error: Could not fully analyze this claim',
-                            color: 'white',
-                            agreementStatus: 'Neutral'
-                        };
+                        // Return null for error cases to be consistent with our filtering
+                        return null;
                     }
                 })
         );
+
+        // Filter out null claims (those that were too short)
+        processedClaims = processedClaims.filter(claim => claim !== null);
         
         return {
             videoTitle: 'Video Analysis',  // This will be set by the frontend
