@@ -105,9 +105,8 @@ async function generateFinalReport(transcript) {
                             ? verification.assessment + '\n\nNote: While this assessment is based on general scientific knowledge, we were unable to find direct scientific sources for this specific claim. Consider consulting additional academic databases or medical professionals for verification.'
                             : verification.assessment;
 
-                        // Combine consensus and assessment for sentiment analysis
-                        const combinedText = `${verification.consensus || ''} ${assessment || ''}`;
-                        const agreementStatus = determineClaimAgreement(combinedText);
+                        // Get the agreement status from the verification object
+                        const agreementStatus = determineClaimAgreement(verification);
                         
                         // Force the status to be one of our three values
                         if (!['Support', 'Oppose', 'Neutral'].includes(agreementStatus)) {

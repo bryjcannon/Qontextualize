@@ -218,68 +218,15 @@ async function verifyClaims(claims) {
 
 const sentiment = new Sentiment();
 
-function determineClaimAgreement(text) {
-    if (!text) return 'Neutral';
+function determineClaimAgreement(verification) {
+    if (!verification) return 'Neutral';
     
-    const negativeKeywords = [
-        'incorrect', 'misleading', 'unverified', 'false', 'not supported', 'unsupported',
-        'inaccurate', 'contrary', 'refuted', 'no evidence', 'lacks evidence', 'no link',
-        'no scientific', 'no credible', 'no empirical', 'does not support', 'not supported',
-        'disputed', 'unproven', 'debunked', 'flawed', 'unreliable', 'questionable',
-        'insufficient', 'no proof', 'no data', 'no research', 'no studies', 'no correlation',
-        'no causal', 'no relationship', 'no association', 'not established', 'not proven'
-    ];
-
-    const options = {
-        extras: {
-            // Strong negative indicators
-            'unsupported': -4,
-            'refuted': -5,
-            'inaccurate': -4,
-            'misleading': -4,
-            'incorrect': -4,
-            'false': -4,
-            'contrary': -3,
-            'unverified': -3,
-            'disputed': -3,
-            'debunked': -5,
-            'flawed': -4,
-            'unreliable': -3,
-            'insufficient': -3,
-            // Phrases indicating lack of evidence
-            'no evidence': -5,
-            'lacks evidence': -4,
-            'no scientific': -4,
-            'no credible': -4,
-            'no empirical': -4,
-            'not supported': -4,
-            'no proof': -4,
-            'no data': -4,
-            'no research': -4,
-            'no studies': -4,
-            // Positive indicators (kept lower to bias towards opposition)
-            'validated': 2,
-            'confirmed': 2,
-            'proven': 2,
-            'established': 2,
-            'supported': 2,
-            'demonstrates': 2,
-            'shows': 1,
-            'indicates': 1
-        }
-    };
-
-    const textLower = text.toLowerCase();
-    const containsNegative = negativeKeywords.some(keyword => textLower.includes(keyword));
-    const sentimentResult = sentiment.analyze(text, options);
-
-    // More aggressive thresholds
-    if (containsNegative || sentimentResult.score <= 0) {  // Changed from < 0 to <= 0
-        return 'Oppose';
-    } else if (sentimentResult.score > 2) {  // Require stronger positive sentiment
-        return 'Support';
+    // Use the sentiment directly from the verification object
+    if (verification.sentiment === 'Support' || verification.sentiment === 'Oppose' || verification.sentiment === 'Neutral') {
+        return verification.sentiment;
     }
-
+    
+    // Fallback to Neutral if sentiment is not valid
     return 'Neutral';
 }
 

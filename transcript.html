@@ -196,6 +196,122 @@
             animation: fadeIn 0.3s ease;
         }
 
+        .source-item {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .source-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .source-meta {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin: 4px 0 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+
+
+        .peer-reviewed-true {
+            color: var(--accent-green);
+        }
+
+        .peer-reviewed-false {
+            color: var(--text-secondary);
+        }
+
+        .source-meta-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .source-meta-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .source-meta .separator {
+            color: var(--text-secondary);
+            opacity: 0.4;
+            margin: 0 4px;
+            position: relative;
+            top: -1px;
+        }
+
+
+
+        .source-title {
+            font-size: 18px;
+            margin-bottom: 2px;
+        }
+
+        .source-text {
+            font-size: 12px;
+            line-height: 1.4;
+            margin-top: 8px;
+            color: var(--text-secondary);
+        }
+
+        .source-text {
+            color: var(--text-secondary);
+            font-size: 15px;
+            line-height: 1.5;
+            margin-top: 12px;
+        }
+
+        .source-stance {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            display: inline-block;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--accent-yellow);
+            margin-top: auto;
+            align-self: flex-start;
+        }
+
+        .source-stance[data-stance='Support'] {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .source-stance[data-stance='Oppose'] {
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        .source-stance[data-stance='Neutral'] {
+            border-color: var(--accent-yellow);
+            color: var(--accent-yellow);
+        }
+
+        .source-stance strong {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .source-summary-text {
+            margin-top: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }

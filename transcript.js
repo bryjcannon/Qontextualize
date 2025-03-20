@@ -27,37 +27,14 @@ function formatSources(sources) {
         const sourcesContainer = document.createElement('div');
         sourcesContainer.className = 'sources-section';
         
-        // Source statistics
-        const currentYear = new Date().getFullYear();
-        const stats = {
-            totalCount: validSources.length,
-            peerReviewedCount: validSources.filter(s => s.journal).length,
-            recentSourceCount: validSources.filter(s => s.year && currentYear - parseInt(s.year) <= 3).length,
-            domains: Object.entries(validSources.reduce((acc, s) => {
-                const domain = new URL(s.url).hostname.replace('www.', '');
-                acc[domain] = (acc[domain] || 0) + 1;
-                return acc;
-            }, {})).sort((a, b) => b[1] - a[1])
-        };
-
-        const statsDiv = document.createElement('div');
-        statsDiv.className = 'source-stats';
-        statsDiv.innerHTML = `
-            <strong>Source Analysis:</strong>
-            <ul>
-                <li>📚 ${stats.totalCount} scientific source${stats.totalCount !== 1 ? 's' : ''}</li>
-                ${stats.peerReviewedCount ? `<li>✅ ${stats.peerReviewedCount} peer-reviewed publication${stats.peerReviewedCount !== 1 ? 's' : ''}</li>` : ''}
-                ${stats.recentSourceCount ? `<li>🕒 ${stats.recentSourceCount} source${stats.recentSourceCount !== 1 ? 's' : ''} from the past 3 years</li>` : ''}
-                ${stats.domains.length ? `<li>🌐 Sources from: ${stats.domains.map(([domain, count]) => `${domain} (${count})`).join(', ')}</li>` : ''}
-            </ul>
-        `;
-        sourcesContainer.appendChild(statsDiv);
-
         // Sources list
         validSources.forEach(source => {
-            console.log('📕 Processing source:', source);
             const sourceItem = document.createElement('div');
             sourceItem.className = 'source-item';
+
+            // Title and content container
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'source-content';
 
             // Title with link
             const titleLink = document.createElement('a');
@@ -65,55 +42,111 @@ function formatSources(sources) {
             titleLink.target = '_blank';
             titleLink.className = 'source-title';
             titleLink.textContent = source.title;
-            sourceItem.appendChild(titleLink);
+            contentDiv.appendChild(titleLink);
 
-            // Metadata
-            const meta = document.createElement('div');
-            meta.className = 'source-meta';
-            const metaParts = [];
-            if (source.authors) metaParts.push(`👥 ${source.authors}`);
+            // Metadata section
+            const metaDiv = document.createElement('div');
+            metaDiv.className = 'source-meta';
+
+            // First row: Authors, Journal, Peer Review
+            const topRow = document.createElement('div');
+            topRow.className = 'source-meta-row';
+
+            // Authors
+            if (source.authors) {
+                const authorSpan = document.createElement('span');
+                authorSpan.className = 'source-meta-item';
+                authorSpan.innerHTML = `👤 ${source.authors}`;
+                topRow.appendChild(authorSpan);
+
+                const separator = document.createElement('span');
+                separator.className = 'separator';
+                separator.textContent = '•';
+                topRow.appendChild(separator);
+            }
+
+            // Journal with peer review badge
             if (source.journal) {
-                metaParts.push(`📰 ${source.journal}`);
-                const peerReviewedBadge = document.createElement('span');
-                peerReviewedBadge.className = 'peer-reviewed-badge';
-                peerReviewedBadge.textContent = 'Peer Reviewed';
-                meta.appendChild(document.createTextNode(metaParts.join(' • ')));
-                meta.appendChild(peerReviewedBadge);
-            } else {
-                meta.textContent = metaParts.join(' • ');
-            }
-            sourceItem.appendChild(meta);
+                const journalSpan = document.createElement('span');
+                journalSpan.className = 'source-meta-item';
+                journalSpan.innerHTML = `📰 ${source.journal}`;
+                topRow.appendChild(journalSpan);
+                
+                if (source.peerReviewed) {
+                    const separator = document.createElement('span');
+                    separator.className = 'separator';
+                    separator.textContent = '•';
+                    topRow.appendChild(separator);
 
-            // Additional metadata
-            const additionalMeta = document.createElement('div');
-            additionalMeta.className = 'source-meta';
-            const additionalParts = [];
-            if (source.year) additionalParts.push(`📅 ${source.year}`);
-            if (source.citations) additionalParts.push(`📊 ${source.citations} citations`);
-            if (additionalParts.length > 0) {
-                additionalMeta.textContent = additionalParts.join(' • ');
-                sourceItem.appendChild(additionalMeta);
+                    const peerReviewSpan = document.createElement('span');
+                    peerReviewSpan.className = 'source-meta-item';
+                    const iconSpan = document.createElement('span');
+                    iconSpan.className = source.peerReviewed ? 'peer-reviewed-true' : 'peer-reviewed-false';
+                    iconSpan.textContent = '☎';
+                    peerReviewSpan.appendChild(iconSpan);
+                    peerReviewSpan.appendChild(document.createTextNode(' Peer Reviewed'));
+                    topRow.appendChild(peerReviewSpan);
+                }
             }
 
-            // Summary
+            metaDiv.appendChild(topRow);
+
+            // Second row: Year and Citations
+            if (source.year || source.citations) {
+                const bottomRow = document.createElement('div');
+                bottomRow.className = 'source-meta-row';
+
+                // Year
+                if (source.year) {
+                    const yearSpan = document.createElement('span');
+                    yearSpan.className = 'source-meta-item';
+                    yearSpan.innerHTML = `📅 ${source.year}`;
+                    bottomRow.appendChild(yearSpan);
+
+                    if (source.citations) {
+                        const separator = document.createElement('span');
+                        separator.className = 'separator';
+                        separator.textContent = '•';
+                        bottomRow.appendChild(separator);
+                    }
+                }
+
+                // Citations
+                if (source.citations) {
+                    const citationsSpan = document.createElement('span');
+                    citationsSpan.className = 'source-meta-item';
+                    citationsSpan.innerHTML = `📊 ${source.citations} citations`;
+                    bottomRow.appendChild(citationsSpan);
+                }
+
+                metaDiv.appendChild(bottomRow);
+            }
+
+            contentDiv.appendChild(metaDiv);
+
+            // Summary text
             if (source.summary) {
-                const summary = document.createElement('div');
-                summary.className = 'source-summary';
-                summary.textContent = source.summary;
-                sourceItem.appendChild(summary);
+                const summaryText = document.createElement('div');
+                summaryText.className = 'source-text';
+                summaryText.textContent = source.summary;
+                contentDiv.appendChild(summaryText);
             }
 
-            // Stance with icon
+            sourceItem.appendChild(contentDiv);
+
+            // Stance indicator at bottom
             if (source.stance) {
-                const stance = document.createElement('div');
-                stance.className = `source-stance stance-${source.stance.toLowerCase()}`;
                 const stanceIcon = {
-                    'agrees': '✅',
-                    'disagrees': '❌',
-                    'neutral': '⚖️'
-                }[source.stance.toLowerCase()] || '•';
-                stance.textContent = `${stanceIcon} ${source.stance.charAt(0).toUpperCase() + source.stance.slice(1)}`;
-                sourceItem.appendChild(stance);
+                    'Support': '✅',
+                    'Oppose': '❌',
+                    'Neutral': '⚖️'
+                }[source.stance] || '•';
+                
+                const stanceText = document.createElement('div');
+                stanceText.className = 'source-stance';
+                stanceText.setAttribute('data-stance', source.stance);
+                stanceText.innerHTML = `<strong>${stanceIcon} ${source.stance}</strong>`;
+                sourceItem.appendChild(stanceText);
             }
 
             sourcesContainer.appendChild(sourceItem);
