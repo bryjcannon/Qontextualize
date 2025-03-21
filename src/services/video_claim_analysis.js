@@ -6,6 +6,7 @@ import { config } from '../config/index.js';
 import openaiService from './openai-service.js';
 import transcriptProcessor from './transcript-processor.js';
 import timer from '../utils/timing.js';
+import { processBatches, processSequentially, collectResults } from '../utils/batch-processor.js';
 
 import { saveClaimsSummary } from '../utils/claims_record.js';
 import { processClaims } from '../utils/claims_processor.js';
@@ -16,15 +17,18 @@ import { processClaims } from '../utils/claims_processor.js';
  * @returns {Promise<string>} Processed claims joined by newlines
  */
 async function extractClaims(chunks) {
-    let allClaims = [];
+    // Extract claims from chunks in parallel batches
+    const allClaims = [];
+    const claimExtractor = async (chunk) => {
+        return await openaiService.extractClaims(chunk);
+    };
 
-    // Extract initial claims from chunks
-    for (let i = 0; i < chunks.length; i++) {
-        const claims = await timer.time(
-            `Extract claims from chunk ${i + 1}/${chunks.length}`,
-            () => openaiService.extractClaims(chunks[i])
-        );
-        allClaims.push(...claims);
+    for await (const batchClaims of processBatches(chunks, claimExtractor, {
+        batchSize: 3,
+        operationName: 'Extract claims from chunk',
+        metadata: { totalChunks: chunks.length }
+    })) {
+        allClaims.push(...batchClaims.flat());
     }
 
     // Process claims through the pipeline
@@ -63,24 +67,27 @@ async function extractClaims(chunks) {
 async function verifyClaims(claims) {
     const claimsList = claims.split('\n').filter(claim => claim.trim());
     const verifications = {};
-
-    // Create array of promises for each claim verification
-    const verificationPromises = claimsList
-        .filter(claim => claim.includes(':'))
-        .map(async claim => {
-            const [topic, claimText] = claim.split(':', 2);
-            const analysis = await openaiService.verifyClaim(claim, topic);
-            return { topic, analysis };
-        });
-
-    // Wait for all verifications to complete
-    const results = await Promise.all(verificationPromises);
     
-    // Convert results array to object
-    results.forEach(({ topic, analysis }) => {
-        verifications[topic] = analysis;
-    });
+    const verifier = async (claim) => {
+        if (!claim.includes(':')) return null;
+        const [topic, claimText] = claim.split(':', 2);
+        const analysis = await openaiService.verifyClaim(claim, topic);
+        return { topic, analysis };
+    };
 
+    // Process claims in batches
+    for await (const batchResults of processBatches(claimsList, verifier, {
+        batchSize: 3,
+        operationName: 'Verify claims batch',
+        metadata: { totalClaims: claimsList.length }
+    })) {
+        for (const result of batchResults) {
+            if (result) {
+                verifications[result.topic] = result.analysis;
+            }
+        }
+    }
+    
     return verifications;
 }
 
@@ -109,15 +116,16 @@ function determineClaimAgreement(verification) {
  * @returns {Promise<string[]>} Array of summaries for each chunk
  */
 async function generateChunkSummaries(chunks) {
-    console.log('Generating summaries for each chunk...');
-    
-    const chunkSummaries = await Promise.all(chunks.map(async (chunk, index) => {
-        console.log(`Processing chunk ${index + 1}/${chunks.length}...`);
+    const summaryGenerator = async (chunk) => {
         const summaryPrompt = prompts.generateSummary(chunk);
         return await openaiService.analyzeContent(summaryPrompt);
-    }));
+    };
 
-    return chunkSummaries;
+    return await collectResults(processBatches(chunks, summaryGenerator, {
+        batchSize: 2,
+        operationName: 'Generate chunk summary',
+        metadata: { totalChunks: chunks.length }
+    }));
 }
 
 /**
