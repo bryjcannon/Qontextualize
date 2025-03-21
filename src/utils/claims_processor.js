@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { clusterClaims, scoreClaims } from './cluster_claims.js';
 import openaiService from '../services/openai-service.js';
+import { config } from '../config/index.js';
 
 
 /**

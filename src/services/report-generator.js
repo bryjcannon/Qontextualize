@@ -1,6 +1,7 @@
 import { prompts } from '../prompts/prompts.js';
 import { processTranscript, verifyClaims, determineClaimAgreement, fetchSources } from './video_claim_analysis.js';
 import openaiService from './openai-service.js';
+import { config } from '../config/index.js';
 
 async function generateFinalReport(transcript) {
     try {
@@ -31,7 +32,7 @@ async function generateFinalReport(transcript) {
                     
                     // Skip claims with empty or very short text
                     const words = claimText.trim().split(/\s+/);
-                    if (words.length <= 5) {
+                    if (words.length < config.claims.minClaimLength) {
                         console.log(`Skipping claim '${topic}' due to insufficient length (${words.length} words)`);
                         return null;
                     }
@@ -69,7 +70,7 @@ async function generateFinalReport(transcript) {
                                 if (src.isPeerReviewed) peerReviewedCount++;
                                 if (src.publishedDate) {
                                     const pubYear = new Date(src.publishedDate).getFullYear();
-                                    if (currentYear - pubYear <= 3) recentSourceCount++;
+                                    if (currentYear - pubYear <= config.claims.recentSourceYears) recentSourceCount++;
                                 }
                             });
                             

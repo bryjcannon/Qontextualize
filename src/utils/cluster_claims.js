@@ -1,4 +1,5 @@
 import openaiService from '../services/openai-service.js';
+import { config } from '../config/index.js';
 
 /**
  * Score a claim based on misinformation potential, ethics, and controversy
@@ -71,7 +72,7 @@ export async function clusterClaims(claims) {
     );
 
     // Cluster claims using similarity threshold
-    const similarityThreshold = 0.85; // Adjust this to control cluster size
+    const similarityThreshold = config.claims.similarityThreshold;
     const used = new Set();
     const clusters = [];
 

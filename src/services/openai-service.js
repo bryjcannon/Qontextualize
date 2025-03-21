@@ -1,19 +1,16 @@
 import OpenAI from 'openai';
 import { prompts } from '../prompts/prompts.js';
-import config from '../config/config.server.js';
-import { config as dotenvConfig } from 'dotenv';
-
-dotenvConfig();
+import { config } from '../config/index.js';
 
 /**
  * Centralized service for handling OpenAI API interactions
  */
 class OpenAIService {
     constructor() {
-        this.client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-        this.defaultModel = "gpt-4-turbo-preview";
-        this.maxRetries = config.MAX_RETRIES || 3;
-        this.retryDelay = config.RETRY_DELAY || 1000;
+        this.client = new OpenAI({ apiKey: config.openai.apiKey });
+        this.defaultModel = config.openai.defaultModel;
+        this.maxRetries = config.openai.maxRetries;
+        this.retryDelay = config.openai.retryDelay;
     }
 
     /**
@@ -163,7 +160,7 @@ Return YES if it meets either criteria, even if the claim seems controversial, u
         for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
             try {
                 const response = await this.client.embeddings.create({
-                    model: "text-embedding-ada-002",
+                    model: config.openai.embeddingModel,
                     input: text
                 });
                 return response.data[0].embedding;
