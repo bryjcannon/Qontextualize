@@ -2,84 +2,9 @@ import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
 import Sentiment from 'sentiment';
 import { prompts } from '../prompts/prompts.js';
-import config from '../config/config.server.js';
+import { config } from '../config/index.js';
 import openaiService from './openai-service.js';
-
-import { config as dotenvConfig } from 'dotenv';
-dotenvConfig();
-
-/**
- * Estimates the number of tokens in a text string.
- * This is a rough estimate based on GPT tokenization patterns.
- * @param {string} text - The text to estimate tokens for
- * @returns {number} Estimated token count
- */
-function estimateTokenCount(text) {
-    // GPT models typically tokenize on word boundaries and common subwords
-    // A rough estimate is 4 characters per token on average
-    const charCount = text.length;
-    return Math.ceil(charCount / 4);
-}
-
-/**
- * Splits transcript into overlapping chunks optimized for GPT-4-Turbo.
- * @param {string} transcript - The full transcript text
- * @param {Object} options - Chunking options
- * @param {number} options.maxTokens - Maximum tokens per chunk (default 10000)
- * @param {number} options.overlapTokens - Number of tokens to overlap (default 200)
- * @returns {string[]} Array of transcript chunks
- */
-export function chunkTranscript(transcript, options = {}) {
-    const {
-        maxTokens = 10000,      // Target ~10K tokens per chunk
-        overlapTokens = 200     // Overlap by ~200 tokens
-    } = options;
-
-    // Convert token counts to approximate character lengths
-    const maxChars = maxTokens * 4;
-    const overlapChars = overlapTokens * 4;
-
-    // Split transcript into sentences
-    const sentences = transcript.match(/[^.!?]+[.!?]+/g) || [transcript];
-    const chunks = [];
-    let currentChunk = '';
-    let overlapSegment = '';
-
-    for (const sentence of sentences) {
-        // Add new sentence to the current chunk
-        const newChunk = currentChunk + sentence + ' ';
-        
-        if (estimateTokenCount(newChunk) > maxTokens && currentChunk.length > 0) {
-            // Store the current chunk
-            chunks.push(currentChunk.trim());
-            
-            // Get the overlap segment from the end of the current chunk
-            const words = currentChunk.split(' ');
-            overlapSegment = words
-                .slice(Math.max(0, words.length - overlapTokens))
-                .join(' ');
-            
-            // Start new chunk with overlap
-            currentChunk = overlapSegment + ' ' + sentence + ' ';
-        } else {
-            currentChunk = newChunk;
-        }
-    }
-
-    // Add the final chunk if not empty
-    if (currentChunk.trim().length > 0) {
-        chunks.push(currentChunk.trim());
-    }
-
-    // Log chunking statistics
-    console.log(`Split transcript into ${chunks.length} chunks:`);
-    chunks.forEach((chunk, i) => {
-        const tokenCount = estimateTokenCount(chunk);
-        console.log(`Chunk ${i + 1}: ~${tokenCount} tokens`);
-    });
-
-    return chunks;
-}
+import transcriptProcessor from './transcript-processor.js';
 
 import { saveClaimsSummary } from '../utils/claims_record.js';
 
@@ -261,7 +186,7 @@ async function processTranscript(transcript) {
     try {
         // Step 1: Break transcript into chunks
         console.log('Breaking transcript into chunks...');
-        const chunks = await chunkTranscript(transcript);
+        const chunks = transcriptProcessor.chunkTranscript(transcript);
         
         // Step 2: Extract claims from the chunks
         console.log('Extracting claims from transcript...');

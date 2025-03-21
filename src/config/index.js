@@ -1,25 +1,119 @@
+import { config as dotenvConfig } from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+// Load environment variables from .env file
+dotenvConfig();
+
+// Validate required environment variables
+const requiredEnvVars = ['OPENAI_API_KEY'];
+for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+        throw new Error(`Missing required environment variable: ${envVar}`);
+    }
+}
+
+// Parse rate limit values
+const rateLimitWindow = parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000; // default 15 minutes
+const rateLimitRequests = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100; // default 100 requests
+
+// Parse CORS origins
+const corsOrigins = process.env.CORS_ORIGIN ? 
+    process.env.CORS_ORIGIN.split(',').map(origin => origin.trim()) :
+    ['http://localhost:3000'];
+
+/**
+ * Validate and sanitize environment variables
+ */
+function validateEnv() {
+    // Required environment variables
+    const required = ['OPENAI_API_KEY'];
+    const missing = required.filter(key => !process.env[key]);
+    if (missing.length > 0) {
+        throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    }
+
+    // Validate numeric values
+    const numericVars = {
+        OPENAI_MAX_RETRIES: { min: 0, max: 5 },
+        OPENAI_RETRY_DELAY: { min: 100, max: 10000 },
+        OPENAI_TEMPERATURE: { min: 0, max: 2 },
+        OPENAI_MAX_TOKENS: { min: 100, max: 32000 },
+        TRANSCRIPT_MAX_TOKENS: { min: 1000, max: 32000 },
+        MIN_CLAIM_LENGTH: { min: 1, max: 100 },
+        PORT: { min: 1024, max: 65535 }
+    };
+
+    for (const [key, range] of Object.entries(numericVars)) {
+        if (process.env[key]) {
+            const value = Number(process.env[key]);
+            if (isNaN(value) || value < range.min || value > range.max) {
+                throw new Error(`Invalid value for ${key}: must be between ${range.min} and ${range.max}`);
+            }
+        }
+    }
+
+    // Sanitize CORS origins
+    if (process.env.CORS_ORIGIN && process.env.CORS_ORIGIN !== '*') {
+        const origins = process.env.CORS_ORIGIN.split(',').map(o => o.trim());
+        const validOrigins = origins.every(origin => {
+            try {
+                new URL(origin);
+                return true;
+            } catch {
+                return false;
+            }
+        });
+        if (!validOrigins) {
+            throw new Error('Invalid CORS_ORIGIN: must be "*" or comma-separated list of valid URLs');
+        }
+    }
+}
+
+// Validate environment variables before creating config
+validateEnv();
+
 /**
  * Application configuration settings
  */
 export const config = {
-  openai: {
-    // API configuration
-    apiKey: process.env.OPENAI_API_KEY,
-    defaultModel: "gpt-4-turbo-preview",
-    embeddingModel: "text-embedding-ada-002",
-    maxRetries: 3,
-    retryDelay: 1000, // ms
+  // Environment info
+  env: {
+    isDevelopment: process.env.NODE_ENV !== 'production',
+    nodeEnv: process.env.NODE_ENV || 'development'
+  },
 
-    // Model parameters
-    temperature: 0.1,
-    maxTokens: 4000,
+  // OpenAI settings
+  openai: {
+    apiKey: process.env.OPENAI_API_KEY,
+    defaultModel: ['gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo'].includes(process.env.OPENAI_MODEL) 
+      ? process.env.OPENAI_MODEL 
+      : 'gpt-4-turbo-preview',
+    embeddingModel: process.env.OPENAI_EMBEDDING_MODEL === 'text-embedding-3-small' 
+      ? 'text-embedding-3-small' 
+      : 'text-embedding-ada-002',
+    maxRetries: Math.min(Math.max(parseInt(process.env.OPENAI_MAX_RETRIES) || 3, 0), 5),
+    retryDelay: Math.min(Math.max(parseInt(process.env.OPENAI_RETRY_DELAY) || 1000, 100), 10000),
+    temperature: Math.min(Math.max(parseFloat(process.env.OPENAI_TEMPERATURE) || 0.1, 0), 2),
+    maxTokens: Math.min(Math.max(parseInt(process.env.OPENAI_MAX_TOKENS) || 4000, 100), 32000)
+  },
+
+  transcript: {
+    // Chunking settings
+    maxTokens: parseInt(process.env.TRANSCRIPT_MAX_TOKENS) || 10000,
+    overlapTokens: parseInt(process.env.TRANSCRIPT_OVERLAP_TOKENS) || 200,
+    minChunkLength: parseInt(process.env.TRANSCRIPT_MIN_CHUNK_LENGTH) || 100,
+    
+    // Processing settings
+    maxChunks: parseInt(process.env.TRANSCRIPT_MAX_CHUNKS) || 50,
+    minSentenceLength: parseInt(process.env.TRANSCRIPT_MIN_SENTENCE_LENGTH) || 10
   },
 
   claims: {
     // Processing settings
-    minClaimLength: 5, // minimum words per claim
-    maxClaimsPerChunk: 10,
-    similarityThreshold: 0.85, // threshold for clustering similar claims
+    minClaimLength: parseInt(process.env.MIN_CLAIM_LENGTH) || 5,
+    maxClaimsPerChunk: parseInt(process.env.MAX_CLAIMS_PER_CHUNK) || 10,
+    similarityThreshold: parseFloat(process.env.SIMILARITY_THRESHOLD) || 0.85,
     
     // Scoring weights
     weights: {
@@ -29,15 +123,21 @@ export const config = {
     },
 
     // Output settings
-    maxSourcesPerClaim: 3,
-    maxEvidencePoints: 5,
-    recentSourceYears: 3 // consider sources within last N years as recent
+    maxSourcesPerClaim: parseInt(process.env.MAX_SOURCES_PER_CLAIM) || 3,
+    maxEvidencePoints: parseInt(process.env.MAX_EVIDENCE_POINTS) || 5,
+    recentSourceYears: parseInt(process.env.RECENT_SOURCE_YEARS) || 3
   },
 
   server: {
-    port: process.env.PORT || 3000,
+    port: parseInt(process.env.PORT) || 3000,
     host: process.env.HOST || 'localhost',
     
+    // CORS configuration
+    cors: {
+      origin: corsOrigins,
+      credentials: true
+    },
+
     // API endpoints
     endpoints: {
       proxy: '/api/proxy',
@@ -47,14 +147,16 @@ export const config = {
 
     // Rate limiting
     rateLimit: {
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      maxRequests: 100 // requests per window
+      windowMs: rateLimitWindow,
+      maxRequests: rateLimitRequests
     },
 
     // CORS settings
     cors: {
-      origin: process.env.CORS_ORIGIN || '*',
-      methods: ['GET', 'POST']
+      origin: corsOrigins,
+      methods: ['GET', 'POST'],
+      credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization']
     }
   }
 };
