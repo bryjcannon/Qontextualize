@@ -1,4 +1,4 @@
-import config from './config.browser.js';
+import config from './src/config/config.browser.js';
 
 
 function formatSources(sources) {
