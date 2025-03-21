@@ -1,6 +1,4 @@
-import OpenAI from 'openai';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import openaiService from '../services/openai-service.js';
 
 /**
  * Score a claim based on misinformation potential, ethics, and controversy
@@ -17,13 +15,8 @@ Claim: ${claim}
 
 Return only a number 1-10.`;
 
-    const response = await openai.chat.completions.create({
-        model: "gpt-4-turbo-preview",
-        messages: [{ role: "user", content: scorePrompt }],
-        temperature: 0.1
-    });
-    
-    return parseFloat(response.choices[0].message.content);
+    const result = await openaiService.analyzeContent(scorePrompt);
+    return parseFloat(result);
 }
 
 /**
@@ -46,11 +39,7 @@ async function scoreClaims(claims) {
  */
 async function getEmbeddings(claims) {
     const embeddings = await Promise.all(claims.map(async claim => {
-        const response = await openai.embeddings.create({
-            model: "text-embedding-ada-002",
-            input: claim
-        });
-        return response.data[0].embedding;
+        return await openaiService.getEmbedding(claim);
     }));
     return embeddings;
 }

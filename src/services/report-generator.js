@@ -1,10 +1,6 @@
-import { OpenAI } from 'openai';
 import { prompts } from '../prompts/prompts.js';
 import { processTranscript, verifyClaims, determineClaimAgreement, fetchSources } from './video_claim_analysis.js';
-import { config as dotenvConfig } from 'dotenv';
-
-dotenvConfig();
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import openaiService from './openai-service.js';
 
 async function generateFinalReport(transcript) {
     try {
@@ -52,11 +48,7 @@ async function generateFinalReport(transcript) {
                         // Get scientific consensus if not present
                         if (!verification.consensus) {
                             const consensusPrompt = prompts.getConsensus(topic, claimText);
-                            const consensusResponse = await openai.chat.completions.create({
-                                model: "gpt-4o",
-                                messages: [{ role: "user", content: consensusPrompt }]
-                            });
-                            verification.consensus = consensusResponse.choices[0].message.content;
+                            verification.consensus = await openaiService.analyzeContent(consensusPrompt);
                         }
 
                         // Get and analyze sources for this claim

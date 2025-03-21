@@ -1,38 +1,14 @@
-import OpenAI from 'openai';
-import { prompts } from '../prompts/prompts.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { clusterClaims, scoreClaims } from './cluster_claims.js';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import openaiService from '../services/openai-service.js';
 
 
 /**
  * Filters out low-confidence or problematic claims
  */
 async function filterClaims(claims) {
-    const filterPrompt = `You are an expert in scientific fact-checking. Analyze this claim:
-{claim}
-
-Determine if this claim should be included in fact-checking based on:
-1. Is it a concrete statement about science, health, technology, or public policy?
-2. Does it make specific assertions that can be analyzed (even if controversial or uncertain)?
-3. Is it clear and unambiguous?
-
-Return YES if it meets either criteria, even if the claim seems controversial, uncertain, or challenges mainstream views. We want to include important claims that need verification, not just obvious facts. Return NO only if the claim is completely abstract, personal opinion, or impossible to analyze.`;
-
-    const results = await Promise.all(claims.map(async claim => {
-        const response = await openai.chat.completions.create({
-            model: "gpt-4-turbo-preview",
-            messages: [{ 
-                role: "user", 
-                content: filterPrompt.replace("{claim}", claim)
-            }],
-            temperature: 0.1
-        });
-        return response.choices[0].message.content.toLowerCase().includes("yes");
-    }));
-
+    const results = await Promise.all(claims.map(claim => openaiService.filterClaim(claim)));
     return claims.filter((_, i) => results[i]);
 }
 

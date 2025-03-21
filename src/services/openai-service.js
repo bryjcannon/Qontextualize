@@ -152,6 +152,32 @@ Return YES if it meets either criteria, even if the claim seems controversial, u
             throw error;
         }
     }
+
+    /**
+     * Get embeddings for a text using OpenAI's API
+     * @param {string} text - Text to get embeddings for
+     * @returns {Promise<number[]>} Embedding vector
+     */
+    async getEmbedding(text) {
+        let lastError;
+        for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+            try {
+                const response = await this.client.embeddings.create({
+                    model: "text-embedding-ada-002",
+                    input: text
+                });
+                return response.data[0].embedding;
+            } catch (error) {
+                console.error(`Attempt ${attempt} failed:`, error);
+                lastError = error;
+                
+                if (attempt < this.maxRetries) {
+                    await this.sleep(this.retryDelay * attempt);
+                }
+            }
+        }
+        throw lastError;
+    }
 }
 
 // Export singleton instance

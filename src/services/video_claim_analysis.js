@@ -1,14 +1,12 @@
-import OpenAI from 'openai';
 import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
 import Sentiment from 'sentiment';
 import { prompts } from '../prompts/prompts.js';
 import config from '../config/config.server.js';
+import openaiService from './openai-service.js';
 
 import { config as dotenvConfig } from 'dotenv';
 dotenvConfig();
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
  * Estimates the number of tokens in a text string.
@@ -97,15 +95,8 @@ async function extractClaims(chunks) {
 
     // Extract initial claims from chunks
     for (const chunk of chunks) {
-        const prompt = prompts.extractClaims(chunk);
-        
-        const response = await openai.chat.completions.create({
-            model: "gpt-4-turbo-preview",
-            messages: [{ role: "user", content: prompt }]
-        });
-        
-        const claims = response.choices[0].message.content;
-        allClaims.push(...claims.split('\n').filter(claim => claim.trim()));
+        const claims = await openaiService.extractClaims(chunk);
+        allClaims.push(...claims);
     }
 
     // Process claims through the pipeline
@@ -143,70 +134,15 @@ async function extractClaims(chunks) {
 
 async function verifyClaims(claims) {
     const claimsList = claims.split('\n').filter(claim => claim.trim());
-    let verifications = {};
+    const verifications = {};
 
     // Create array of promises for each claim verification
     const verificationPromises = claimsList
         .filter(claim => claim.includes(':'))
         .map(async claim => {
             const [topic, claimText] = claim.split(':', 2);
-            
-            const prompt = prompts.verifyClaim(claim, topic);
-            
-            try {
-                const response = await openai.chat.completions.create({
-                    model: "gpt-4-turbo-preview",
-                    messages: [{ 
-                        role: "system", 
-                        content: "You are a scientific fact-checker. Always respond with valid JSON matching the exact schema requested."
-                    }, { 
-                        role: "user", 
-                        content: prompt 
-                    }],
-                    response_format: { type: "json_object" }
-                });
-                
-                let text = response.choices[0].message.content.trim();
-                
-                try {
-                    // Parse the JSON response
-                    const analysis = JSON.parse(text);
-                    
-                    // Validate required fields
-                    if (!analysis.topic || !analysis.confidence || !analysis.assessment || !analysis.evidence || !analysis.consensus || !analysis.sentiment) {
-                        throw new Error('Missing required fields in JSON response');
-                    }
-                    
-                    return { topic, analysis };
-                } catch (parseError) {
-                    console.error(`JSON parsing error for claim '${topic}':`, parseError);
-                    console.error('Raw response:', text);
-                    
-                    // Return a structured error response
-                    return {
-                        topic,
-                        analysis: {
-                            topic,
-                            confidence: 'Low',
-                            assessment: 'Error parsing verification response',
-                            evidence: [],
-                            consensus: 'Unable to verify due to technical error'
-                        }
-                    };
-                }
-            } catch (error) {
-                console.error(`Error verifying claim '${topic}':`, error);
-                return {
-                    topic,
-                    analysis: {
-                        topic,
-                        confidence: 'Low',
-                        assessment: 'Could not verify this claim',
-                        evidence: [],
-                        consensus: 'Insufficient data to establish scientific consensus'
-                    }
-                };
-            }
+            const analysis = await openaiService.verifyClaim(claim, topic);
+            return { topic, analysis };
         });
 
     // Wait for all verifications to complete
@@ -250,11 +186,7 @@ async function generateChunkSummaries(chunks) {
     const chunkSummaries = await Promise.all(chunks.map(async (chunk, index) => {
         console.log(`Processing chunk ${index + 1}/${chunks.length}...`);
         const summaryPrompt = prompts.generateSummary(chunk);
-        const response = await openai.chat.completions.create({
-            model: "gpt-4-turbo-preview",
-            messages: [{ role: "user", content: summaryPrompt }]
-        });
-        return response.choices[0].message.content;
+        return await openaiService.analyzeContent(summaryPrompt);
     }));
 
     return chunkSummaries;
@@ -268,11 +200,7 @@ async function generateChunkSummaries(chunks) {
 async function generateFinalSummary(chunkSummaries) {
     console.log('Generating final summary...');
     const finalSummaryPrompt = prompts.generateFinalSummary(chunkSummaries.join('\n\n'));
-    const finalSummaryResponse = await openai.chat.completions.create({
-        model: "gpt-4-turbo-preview",
-        messages: [{ role: "user", content: finalSummaryPrompt }]
-    });
-    return finalSummaryResponse.choices[0].message.content;
+    return await openaiService.analyzeContent(finalSummaryPrompt);
 }
 
 /**
@@ -290,19 +218,7 @@ async function fetchSources(claim) {
         console.log(`🔍 Fetching sources for claim: ${claim}`);
         const prompt = prompts.getSources(claim);
 
-        const response = await openai.chat.completions.create({
-            model: "gpt-4-turbo-preview",
-            messages: [{ 
-                role: "system", 
-                content: "You are a scientific research assistant. Always respond with valid JSON matching the exact schema requested."
-            }, { 
-                role: "user", 
-                content: prompt 
-            }],
-            response_format: { type: "json_object" }
-        });
-
-        const result = JSON.parse(response.choices[0].message.content);
+        const result = await openaiService.analyzeContent(prompt, { jsonResponse: true });
         
         if (!result.sources || !Array.isArray(result.sources)) {
             console.warn('No valid sources returned for claim:', claim);
