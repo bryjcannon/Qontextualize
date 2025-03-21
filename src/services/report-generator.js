@@ -1,6 +1,7 @@
 import { prompts } from '../prompts/prompts.js';
 import { processTranscript, verifyClaims, determineClaimAgreement, fetchSources } from './video_claim_analysis.js';
 import openaiService from './openai-service.js';
+import storageService from './storage-service.js';
 import { config } from '../config/index.js';
 
 async function generateFinalReport(transcript) {
@@ -11,13 +12,19 @@ async function generateFinalReport(transcript) {
         console.log('Verifying claims...');
         const verifiedClaims = await verifyClaims(claims);
 
-        // If no claims were found or verified, return early with just the summary
+        // If no claims were found or verified, save empty report and return
         if (!verifiedClaims || verifiedClaims.length === 0) {
-            return {
+            const report = {
                 summary: finalSummaryResponse,
                 claims: [],
                 message: "No strong or potentially controversial claims were identified in this video."
             };
+
+            // Save the empty report
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            await storageService.saveClaimsData(report, 'report', timestamp);
+            
+            return report;
         }
         
 
@@ -149,11 +156,28 @@ async function generateFinalReport(transcript) {
         // Filter out null claims (those that were too short)
         processedClaims = processedClaims.filter(claim => claim !== null);
         
-        return {
+        const report = {
             videoTitle: 'Video Analysis',  // This will be set by the frontend
             summary: finalSummaryResponse,
             claims: processedClaims
         };
+
+        // Save the report data
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        await storageService.saveClaimsData(report, 'report', timestamp);
+
+        // Export report to CSV
+        const csvData = report.claims.map(claim => ({
+            Title: claim.title,
+            Summary: claim.summary,
+            Assessment: claim.assessment,
+            Consensus: claim.consensus,
+            Agreement: claim.agreementStatus,
+            Sources: claim.sources.map(s => s.url).join('; ')
+        }));
+        await storageService.exportToCSV(csvData, `report_${timestamp}.csv`);
+
+        return report;
     } catch (error) {
         console.error('Error generating report:', error);
         throw error;
