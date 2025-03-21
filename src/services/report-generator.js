@@ -30,7 +30,6 @@ async function generateFinalReport(transcript) {
 
 
         // Process all claims in parallel
-        console.log('Processing claims...');
         let processedClaims = await Promise.all(
             claims.split('\n')
                 .filter(claim => claim.trim() && claim.includes(':'))

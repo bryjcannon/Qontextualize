@@ -5,9 +5,9 @@ import { prompts } from '../prompts/prompts.js';
 import { config } from '../config/index.js';
 import openaiService from './openai-service.js';
 import transcriptProcessor from './transcript-processor.js';
+import timer from '../utils/timing.js';
 
 import { saveClaimsSummary } from '../utils/claims_record.js';
-
 import { processClaims } from '../utils/claims_processor.js';
 
 /**
@@ -19,8 +19,11 @@ async function extractClaims(chunks) {
     let allClaims = [];
 
     // Extract initial claims from chunks
-    for (const chunk of chunks) {
-        const claims = await openaiService.extractClaims(chunk);
+    for (let i = 0; i < chunks.length; i++) {
+        const claims = await timer.time(
+            `Extract claims from chunk ${i + 1}/${chunks.length}`,
+            () => openaiService.extractClaims(chunks[i])
+        );
         allClaims.push(...claims);
     }
 
@@ -123,9 +126,14 @@ async function generateChunkSummaries(chunks) {
  * @returns {Promise<string>} Final comprehensive summary
  */
 async function generateFinalSummary(chunkSummaries) {
-    console.log('Generating final summary...');
-    const finalSummaryPrompt = prompts.generateFinalSummary(chunkSummaries.join('\n\n'));
-    return await openaiService.analyzeContent(finalSummaryPrompt);
+    return await timer.time(
+        'Generate final summary',
+        async () => {
+            const finalSummaryPrompt = prompts.generateFinalSummary(chunkSummaries.join('\n\n'));
+            return await openaiService.analyzeContent(finalSummaryPrompt);
+        },
+        { summaryCount: chunkSummaries.length }
+    );
 }
 
 /**
@@ -183,30 +191,51 @@ async function fetchSources(claim) {
  * @returns {Promise<Object>} Object containing claims and final summary
  */
 async function processTranscript(transcript) {
+    timer.start('Total processing time');
+    
     try {
         // Step 1: Break transcript into chunks
-        console.log('Breaking transcript into chunks...');
-        const chunks = transcriptProcessor.chunkTranscript(transcript);
+        const chunks = await timer.time(
+            'Chunk transcript',
+            () => transcriptProcessor.chunkTranscript(transcript),
+            { transcriptLength: transcript.length }
+        );
         
         // Step 2: Extract claims from the chunks
-        console.log('Extracting claims from transcript...');
-        const claims = await extractClaims(chunks);
+        const claims = await timer.time(
+            'Extract and process claims',
+            () => extractClaims(chunks),
+            { chunkCount: chunks.length }
+        );
         
-        // Step 3: Generate summaries for each chunk
-        console.log('Generating chunk summaries...');
-        const chunkSummaries = await generateChunkSummaries(chunks);
+        // Step 3: Generate summaries and final summary
+        const chunkSummaries = await timer.time(
+            'Generate chunk summaries',
+            () => generateChunkSummaries(chunks),
+            { chunkCount: chunks.length }
+        );
+
+        const finalSummaryResponse = await timer.time(
+            'Generate final summary',
+            () => generateFinalSummary(chunkSummaries),
+            { summaryCount: chunkSummaries.length }
+        );
         
-        // Step 4: Generate final summary from chunk summaries
-        console.log('Generating final summary...');
-        const finalSummaryResponse = await generateFinalSummary(chunkSummaries);
+        const totalTime = timer.end('Total processing time', {
+            chunkCount: chunks.length,
+            claimsCount: claims.length,
+            summaryCount: chunkSummaries.length
+        });
         
         return {
             claims,
             finalSummaryResponse,
-            chunks,  // Including chunks in case needed downstream
-            chunkSummaries  // Including chunk summaries in case needed downstream
+            chunks,
+            chunkSummaries,
+            processingTime: totalTime
         };
     } catch (error) {
+        timer.end('Total processing time');
         console.error('Error processing transcript:', error);
         throw error;
     }
