@@ -14,11 +14,8 @@ const __dirname = dirname(__filename);
 // Load environment variables from root directory
 dotenvConfig({ path: path.resolve(__dirname, '../.env') });
 
-// Log environment variables for debugging
-console.log('🔑 Environment Variables loaded:', {
-    GOOGLE_API_KEY: process.env.GOOGLE_API_KEY ? 'Set' : 'Not Set',
-    GOOGLE_SEARCH_CX: process.env.GOOGLE_SEARCH_CX ? 'Set' : 'Not Set'
-});
+// Log server startup
+console.log('🚀 Server environment loaded');
 
 const app = express();
 

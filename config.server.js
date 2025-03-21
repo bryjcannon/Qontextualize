@@ -8,8 +8,7 @@ const config = {
     RETRY_DELAY: 1000, // 1 second
     
     // Google Custom Search API configuration
-    GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
-    GOOGLE_SEARCH_CX: process.env.GOOGLE_SEARCH_CX
+    // Add any server-specific config here
 };
 
 export default config;
