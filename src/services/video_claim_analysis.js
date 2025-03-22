@@ -7,6 +7,7 @@ import openaiService from './openai-service.js';
 import transcriptProcessor from './transcript-processor.js';
 import timer from '../utils/timing.js';
 import { processBatches, processSequentially, collectResults } from '../utils/batch-processor.js';
+import { sanitizeUrl, extractDomain } from '../utils/url-security.js';
 
 import { saveClaimsSummary } from '../utils/claims_record.js';
 import { processClaims } from '../utils/claims_processor.js';
@@ -169,18 +170,38 @@ async function fetchSources(claim) {
         // Filter out invalid sources and normalize data
         const validSources = result.sources
             .filter(source => source && source.title && source.url)
-            .map(source => ({
-                title: source.title,
-                summary: source.summary || '',
-                stance: source.stance || 'neutral',
-                url: source.url,
-                // Optional metadata
-                authors: source.authors || '',
-                journal: source.journal || '',
-                year: source.year || '',
-                citations: source.citations || 0,
-                domain: new URL(source.url).hostname.replace(/^www\./, '')
-            }));
+            .map(source => {
+                // Validate and sanitize URL
+                const sanitizedUrl = sanitizeUrl(source.url, {
+                    requireHttps: true,
+                    allowedDomainsOnly: true
+                });
+                
+                if (!sanitizedUrl) {
+                    console.warn(`Skipping source with invalid URL: ${source.url}`);
+                    return null;
+                }
+
+                const domain = extractDomain(sanitizedUrl);
+                if (!domain) {
+                    console.warn(`Could not extract domain from URL: ${sanitizedUrl}`);
+                    return null;
+                }
+
+                return {
+                    title: source.title,
+                    summary: source.summary || '',
+                    stance: source.stance || 'neutral',
+                    url: sanitizedUrl,
+                    // Optional metadata
+                    authors: source.authors || '',
+                    journal: source.journal || '',
+                    year: source.year || '',
+                    citations: source.citations || 0,
+                    domain
+                };
+            })
+            .filter(Boolean); // Remove null entries
 
         console.log(`📚 Found ${validSources.length} valid sources for claim`);
         return validSources;

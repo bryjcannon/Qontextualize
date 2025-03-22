@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { config } from '../config/index.js';
+import { validatePath, sanitizeFilename, isOperationAllowed } from '../utils/fs-security.js';
 
 /**
  * Service for handling all file system operations
@@ -23,13 +24,20 @@ class StorageService {
     }
 
     /**
-     * Generate a filename for storing claims data
+     * Generate a safe filename for storing claims data
      * @param {string} type - Type of data (e.g., 'raw', 'processed', 'verified')
      * @param {string} id - Unique identifier for the claims set
-     * @returns {string} Full path to the file
+     * @returns {Promise<string>} Full validated path to the file
      */
-    getClaimsPath(type, id) {
-        return path.join(this.dataDir, `claims_${type}_${id}.json`);
+    async getClaimsPath(type, id) {
+        const safeType = sanitizeFilename(type);
+        const safeId = sanitizeFilename(id);
+        const filename = `claims_${safeType}_${safeId}.json`;
+        
+        return await validatePath(this.dataDir, filename, {
+            allowedExtensions: new Set(['.json']),
+            createDirs: true
+        });
     }
 
     /**
@@ -42,9 +50,18 @@ class StorageService {
     async saveClaimsData(data, type, id = null) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const dataId = id || timestamp;
-        const filepath = this.getClaimsPath(type, dataId);
 
         try {
+            const filepath = await this.getClaimsPath(type, dataId);
+            
+            // Check write permission
+            if (!await isOperationAllowed(path.dirname(filepath), 'write')) {
+                throw new Error('Write operation not allowed on target directory');
+            }
+            
+            // Ensure directory exists
+            await fs.mkdir(path.dirname(filepath), { recursive: true });
+            
             const jsonData = JSON.stringify(data, null, 2);
             await fs.writeFile(filepath, jsonData, 'utf8');
             return dataId;
@@ -61,9 +78,14 @@ class StorageService {
      * @returns {Promise<Object>} The loaded data
      */
     async loadClaimsData(type, id) {
-        const filepath = this.getClaimsPath(type, id);
-
         try {
+            const filepath = await this.getClaimsPath(type, id);
+
+            // Check read permission
+            if (!await isOperationAllowed(filepath, 'read')) {
+                throw new Error('Read operation not allowed');
+            }
+
             const data = await fs.readFile(filepath, 'utf8');
             return JSON.parse(data);
         } catch (error) {
@@ -138,8 +160,14 @@ class StorageService {
      * @param {string} id - Identifier of the data set
      */
     async deleteClaimsData(type, id) {
-        const filepath = this.getClaimsPath(type, id);
         try {
+            const filepath = await this.getClaimsPath(type, id);
+            
+            // Check delete permission
+            if (!await isOperationAllowed(filepath, 'delete')) {
+                throw new Error('Delete operation not allowed');
+            }
+            
             await fs.unlink(filepath);
         } catch (error) {
             console.error(`Error deleting ${type} claims data:`, error);
