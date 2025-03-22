@@ -2,6 +2,71 @@ import fs from 'fs/promises';
 import path from 'path';
 import { config } from '../config/index.js';
 import { validatePath, sanitizeFilename, isOperationAllowed } from '../utils/fs-security.js';
+import { validateJSON, rateLimiters, generateSecureId } from '../utils/security.js';
+
+// JSON schemas for data validation
+const SCHEMAS = {
+    processed: {
+        metadata: {
+            type: 'object',
+            required: true,
+            properties: {
+                timestamp: { type: 'string' },
+                originalCount: { type: 'number' },
+                filteredCount: { type: 'number' },
+                uniqueCount: { type: 'number' },
+                finalCount: { type: 'number' }
+            }
+        },
+        claims: {
+            type: 'array',
+            required: true,
+            itemType: 'object',
+            maxItems: 10000,
+            itemProperties: {
+                claim: { type: 'string', required: true },
+                score: { type: 'number', required: true },
+                cluster: { type: 'string', required: true }
+            }
+        },
+        clusters: {
+            type: 'object',
+            required: true
+        }
+    },
+    report: {
+        videoTitle: { type: 'string', required: true },
+        summary: { type: 'string', required: true },
+        claims: {
+            type: 'array',
+            required: true,
+            itemType: 'object',
+            maxItems: 10000,
+            itemProperties: {
+                title: { type: 'string', required: true },
+                summary: { type: 'string', required: true },
+                assessment: { type: 'string', required: true },
+                consensus: { type: 'string', required: true },
+                agreementStatus: { type: 'string', required: true },
+                sources: {
+                    type: 'array',
+                    required: true,
+                    itemType: 'object',
+                    itemProperties: {
+                        url: { type: 'string', required: true }
+                    }
+                }
+            }
+        }
+    },
+    raw: {
+        // Raw claims have minimal validation
+        claims: {
+            type: 'array',
+            required: true
+        }
+    }
+};
 
 /**
  * Service for handling all file system operations
@@ -48,8 +113,23 @@ class StorageService {
      * @returns {Promise<string>} The ID of the saved data
      */
     async saveClaimsData(data, type, id = null) {
+        // Rate limit check
+        if (!rateLimiters.fileOps.isAllowed('saveClaimsData')) {
+            throw new Error('Rate limit exceeded for file operations');
+        }
+
+        // Get schema for this type
+        const schema = SCHEMAS[type];
+        if (!schema) {
+            throw new Error(`Unknown data type: ${type}`);
+        }
+
+        // Validate input data
+        const validatedData = validateJSON(data, schema);
+
+        // Generate secure ID if not provided
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const dataId = id || timestamp;
+        const dataId = id || generateSecureId();
 
         try {
             const filepath = await this.getClaimsPath(type, dataId);
@@ -62,7 +142,18 @@ class StorageService {
             // Ensure directory exists
             await fs.mkdir(path.dirname(filepath), { recursive: true });
             
-            const jsonData = JSON.stringify(data, null, 2);
+            // Add metadata
+            const enhancedData = {
+                ...validatedData,
+                _metadata: {
+                    savedAt: timestamp,
+                    id: dataId,
+                    type,
+                    version: '1.0'
+                }
+            };
+            
+            const jsonData = JSON.stringify(enhancedData, null, 2);
             await fs.writeFile(filepath, jsonData, 'utf8');
             return dataId;
         } catch (error) {
@@ -78,6 +169,17 @@ class StorageService {
      * @returns {Promise<Object>} The loaded data
      */
     async loadClaimsData(type, id) {
+        // Rate limit check
+        if (!rateLimiters.fileOps.isAllowed('loadClaimsData')) {
+            throw new Error('Rate limit exceeded for file operations');
+        }
+
+        // Get schema for this type
+        const schema = SCHEMAS[type];
+        if (!schema) {
+            throw new Error(`Unknown data type: ${type}`);
+        }
+
         try {
             const filepath = await this.getClaimsPath(type, id);
 
@@ -87,7 +189,10 @@ class StorageService {
             }
 
             const data = await fs.readFile(filepath, 'utf8');
-            return JSON.parse(data);
+            const parsedData = JSON.parse(data);
+            
+            // Validate loaded data
+            return validateJSON(parsedData, schema);
         } catch (error) {
             console.error(`Error loading ${type} claims data:`, error);
             throw new Error(`Failed to load ${type} claims data: ${error.message}`);
