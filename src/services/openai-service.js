@@ -1,6 +1,27 @@
 import OpenAI from 'openai';
 import { prompts } from '../prompts/prompts.js';
 import { config } from '../config/index.js';
+import { apiStats } from '../utils/api-stats.js';
+
+// Cost per 1K tokens (as of March 2024)
+const COST_PER_1K_TOKENS = {
+    'gpt-4': {
+        input: 0.03,
+        output: 0.06
+    },
+    'gpt-3.5-turbo': {
+        input: 0.0005,
+        output: 0.0015
+    }
+};
+
+function calculateCost(model, inputTokens, outputTokens) {
+    const rates = COST_PER_1K_TOKENS[model] || COST_PER_1K_TOKENS['gpt-4'];
+    return (
+        (inputTokens / 1000) * rates.input +
+        (outputTokens / 1000) * rates.output
+    );
+}
 
 /**
  * Centralized service for handling OpenAI API interactions
@@ -33,7 +54,8 @@ class OpenAIService {
         const {
             model = this.defaultModel,
             temperature = 0.1,
-            jsonResponse = false
+            jsonResponse = false,
+            functionName = 'analyzeContent'
         } = options;
 
         let lastError;
@@ -54,6 +76,15 @@ class OpenAIService {
                     temperature,
                     ...(jsonResponse && { response_format: { type: "json_object" } })
                 });
+
+                // Record API usage
+                const inputTokens = messages.reduce((sum, msg) => sum + msg.content.length / 4, 0);
+                const outputTokens = response.choices[0].message.content.length / 4;
+                apiStats.recordCall(
+                    functionName,
+                    inputTokens + outputTokens,
+                    calculateCost(model, inputTokens, outputTokens)
+                );
 
                 const content = response.choices[0].message.content;
                 return jsonResponse ? JSON.parse(content) : content;

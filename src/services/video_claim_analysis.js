@@ -8,6 +8,8 @@ import transcriptProcessor from './transcript-processor.js';
 import timer from '../utils/timing.js';
 import { processBatches, processSequentially, collectResults } from '../utils/batch-processor.js';
 import { sanitizeUrl, extractDomain } from '../utils/url-security.js';
+import { apiStats } from '../utils/api-stats.js';
+import { saveProcessingStats } from '../utils/stats-recorder.js';
 
 import { saveClaimsSummary } from '../utils/claims_record.js';
 import { processClaims } from '../utils/claims_processor.js';
@@ -221,6 +223,7 @@ async function fetchSources(claim) {
  */
 async function processTranscript(transcript) {
     timer.start('Total processing time');
+    apiStats.reset(); // Reset API stats at start
     
     try {
         // Step 1: Break transcript into chunks
@@ -250,23 +253,46 @@ async function processTranscript(transcript) {
             { summaryCount: chunkSummaries.length }
         );
         
+        // Get API usage stats
+        apiStats.endSession();
+        const apiReport = apiStats.getReport();
+        console.log('\nAPI Usage Report:', apiReport);
+        
         const totalTime = timer.end('Total processing time', {
             chunkCount: chunks.length,
             claimsCount: claims.length,
             summaryCount: chunkSummaries.length
         });
         
+        // Prepare stats for saving
+        const stats = {
+            apiUsage: apiStats.stats,
+            processingTime: totalTime,
+            metadata: {
+                chunkCount: chunks.length,
+                claimsCount: claims.length,
+                summaryCount: chunkSummaries.length
+            }
+        };
+        
+        // Save processing stats
+        await saveProcessingStats(stats);
+        
         return {
             claims,
             finalSummaryResponse,
             chunks,
             chunkSummaries,
-            processingTime: totalTime
+            processingTime: totalTime,
+            apiUsage: apiStats.stats // Include raw stats for analysis
         };
     } catch (error) {
         timer.end('Total processing time');
         console.error('Error processing transcript:', error);
         throw error;
+    } finally {
+        // Always end the API stats session
+        apiStats.endSession();
     }
 }
 
