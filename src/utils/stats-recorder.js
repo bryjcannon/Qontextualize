@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
+import settingsManager from './settings-manager.js';
 
 /**
  * Converts a JavaScript object to a CSV row
@@ -30,6 +31,13 @@ function objectToCsvRow(data, headers) {
  * @param {Object} stats.metadata - Additional metadata
  */
 export async function saveProcessingStats(stats) {
+    // Check if local data saving is enabled
+    const isEnabled = await settingsManager.isLocalDataSavingEnabled();
+    if (!isEnabled) {
+        console.log('Local data saving is disabled. Skipping stats recording.');
+        return;
+    }
+
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `processing_data_run_${timestamp}.csv`;
     const filepath = path.join(process.cwd(), 'data', filename);

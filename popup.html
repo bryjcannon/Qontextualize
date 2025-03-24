@@ -3,19 +3,59 @@
 <head>
     <title>Qontextualize</title>
     <link rel="stylesheet" type="text/css" href="popup.css">
+    <link rel="stylesheet" type="text/css" href="src/popup/settings.css">
 </head>
 <body>
     <div class="button-container">
         <button id="qontextualize-btn">Qontextualize</button>
-        <button id="download-btn">DownText</button>
     </div>
-    <div class="options-container">
-        <label class="option-label">
-            <input type="checkbox" id="full-report-checkbox">
-            Full Report (verify all claims)
-        </label>
+    
+
+    
+    <hr class="divider">
+    
+    <!-- Settings section -->
+    <div class="settings-section">
+        <button class="settings-header" id="settings-toggle">
+            <h3>Settings</h3>
+            <span class="chevron">&#x25B6;</span>
+        </button>
+        <div class="settings-content" id="settings-content">
+        <div class="setting-item">
+            <label class="setting-label" for="full-report-checkbox">
+                Full Report
+                <div class="setting-help">
+                    When enabled, all claims will be verified for a more comprehensive analysis.
+                </div>
+            </label>
+            <input type="checkbox" id="full-report-checkbox" class="setting-toggle">
+        </div>
+
+        <div class="setting-item">
+            <label class="setting-label" for="save-local-data">
+                Save Processing Data Locally
+                <div class="setting-help">
+                    When enabled, detailed processing data will be saved as CSV and JSON files in the data directory.
+                </div>
+            </label>
+            <input type="checkbox" id="save-local-data" class="setting-toggle">
+        </div>
+        
+        <div class="setting-item">
+            <label class="setting-label">
+                Download Latest Transcript
+                <div class="setting-help">
+                    Download the most recent transcript as a text file.
+                </div>
+            </label>
+            <button id="download-btn" class="setting-button" disabled>Download</button>
+        </div>
+        </div>
     </div>
+    
     <p id="status" class="status-text"></p>
-    <script src="popup.js"></script>
+    
+    <script src="popup.js" type="module"></script>
+    <script src="src/popup/settings.js" type="module"></script>
 </body>
 </html>

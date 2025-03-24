@@ -1,3 +1,5 @@
+import settingsManager from './src/utils/settings-manager.js';
+
 document.addEventListener('DOMContentLoaded', async function() {
     const button = document.getElementById('qontextualize-btn');
     const downloadBtn = document.getElementById('download-btn');
@@ -6,6 +8,50 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Initially disable download button
     downloadBtn.disabled = true;
+    
+    // Initialize settings toggle
+    const settingsToggle = document.getElementById('settings-toggle');
+    const settingsContent = document.getElementById('settings-content');
+    
+    // Initialize as collapsed
+    settingsToggle.classList.add('collapsed');
+    settingsContent.classList.add('collapsed');
+    
+    // Load settings state from storage
+    chrome.storage.local.get('settingsExpanded', ({ settingsExpanded }) => {
+        if (settingsExpanded === true) {
+            settingsToggle.classList.remove('collapsed');
+            settingsContent.classList.remove('collapsed');
+        }
+    });
+    
+    settingsToggle.addEventListener('click', () => {
+        const isCollapsed = settingsToggle.classList.toggle('collapsed');
+        settingsContent.classList.toggle('collapsed');
+        // Save state
+        chrome.storage.local.set({ settingsExpanded: !isCollapsed });
+    });
+    
+    // Initialize settings
+    const saveLocalDataCheckbox = document.getElementById('save-local-data');
+    const isLocalDataEnabled = await settingsManager.isLocalDataSavingEnabled();
+    saveLocalDataCheckbox.checked = isLocalDataEnabled;
+    
+    saveLocalDataCheckbox.addEventListener('change', async (event) => {
+        try {
+            await settingsManager.updateSetting('saveLocalData', event.target.checked);
+            statusText.textContent = 'Settings saved successfully!';
+            statusText.classList.remove('error');
+            statusText.classList.add('success');
+        } catch (error) {
+            console.error('Failed to save setting:', error);
+            statusText.textContent = 'Failed to save settings';
+            statusText.classList.remove('success');
+            statusText.classList.add('error');
+            // Revert checkbox state
+            event.target.checked = !event.target.checked;
+        }
+    });
     
     // Get list of all stored transcripts
     const stored = await chrome.storage.local.get(null);

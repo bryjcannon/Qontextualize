@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Qontextualize</title>
+    <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Qontextualize</h1>
+        
+        <!-- Main content area -->
+        <div id="content">
+            <div id="status"></div>
+            <div id="actions"></div>
+        </div>
+        
+        <!-- Settings section -->
+        <div id="settings-container">
+            <h2>Settings</h2>
+            <!-- Settings will be dynamically added here -->
+        </div>
+    </div>
+    
+    <script type="module">
+        import { initializeSettings } from './settings.js';
+        
+        // Initialize settings when popup opens
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeSettings().catch(console.error);
+        });
+    </script>
+</body>
+</html>
