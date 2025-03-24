@@ -304,6 +304,8 @@ async function analyzeTranscript(transcriptData, analysisKey) {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
+    // Add loading class to body
+    document.body.classList.add('loading');
     // Get transcript data from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const transcriptKey = urlParams.get('transcriptKey');
@@ -349,9 +351,26 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Update title
         document.getElementById('video-title').textContent = `Analysis of Strong Claims in ${transcriptData.videoTitle}`;
         
+        // Hide loading screen with fade out
+        const loadingScreen = document.getElementById('loading-screen');
+        loadingScreen.classList.add('hidden');
+        document.body.classList.remove('loading');
+        
+        // Remove loading screen after fade out
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+        }, 500);
 
     } catch (error) {
         document.getElementById('video-title').textContent = `Error: ${error.message}`;
         document.getElementById('analysis-content').innerHTML = '<p>Failed to load content</p>';
+        
+        // Hide loading screen on error
+        const loadingScreen = document.getElementById('loading-screen');
+        loadingScreen.classList.add('hidden');
+        document.body.classList.remove('loading');
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+        }, 500);
     }
 });
