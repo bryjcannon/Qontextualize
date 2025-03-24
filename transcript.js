@@ -322,6 +322,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             throw new Error('Invalid key format');
         }
 
+        // Update loading step and progress
+        const loadingStep = document.getElementById('loading-step');
+        const progressBar = document.getElementById('progress-bar');
+        
+        // Step 1: Loading Transcript (0-20%)
+        loadingStep.textContent = 'Loading Transcript';
+        progressBar.style.width = '20%';
+
         // Get transcript and existing analysis from chrome.storage
         const result = await chrome.storage.local.get([transcriptKey, analysisKey]);
         const transcriptData = result[transcriptKey];
@@ -336,9 +344,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         if (!analysisData) {
             // Generate new analysis
-            analysisContent.innerHTML = '<p>Analyzing scientific claims...</p>';
+            // Step 2: Extracting Claims (20-50%)
+            loadingStep.textContent = 'Extracting Claims';
+            progressBar.style.width = '50%';
+            
             try {
                 const analysis = await analyzeTranscript(transcriptData, analysisKey);
+                
+                // Step 3: Verifying Claims (50-80%)
+                loadingStep.textContent = 'Verifying Claims';
+                progressBar.style.width = '80%';
                 displayAnalysis(analysis);
             } catch (error) {
                 analysisContent.innerHTML = `<p>Error analyzing transcript: ${error.message}</p>`;
@@ -348,7 +363,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             displayAnalysis(analysisData);
         }
 
-        // Update title
+        // Step 4: Generating Report (80-100%)
+        loadingStep.textContent = 'Generating Report';
+        progressBar.style.width = '100%';
         document.getElementById('video-title').textContent = `Analysis of Strong Claims in ${transcriptData.videoTitle}`;
         
         // Hide loading screen with fade out
