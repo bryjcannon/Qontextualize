@@ -3,30 +3,6 @@
 <head>
     <title>Video Analysis</title>
     <style>
-        @keyframes progressBarGradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .progress-container {
-            width: 300px;
-            height: 4px;
-            background: #eee;
-            border-radius: 2px;
-            margin-top: 20px;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, #9c27b0, #4CAF50, #9c27b0);
-            background-size: 200% 100%;
-            animation: progressBarGradient 2s ease infinite;
-            transition: width 0.3s ease-out;
-        }
-
         @keyframes gradientShift {
             0% { color: #9c27b0; } /* Purple */
             50% { color: #4CAF50; } /* Green */
@@ -468,10 +444,7 @@
     <div id="loading-screen" class="loading-screen">
         <div class="loading-q">Q</div>
         <div class="loading-text">
-            <span id="loading-step">Initializing</span><span class="dots">...</span>
-        </div>
-        <div class="progress-container">
-            <div class="progress-bar" id="progress-bar"></div>
+            Processing<span class="dots">...</span>
         </div>
     </div>
     <h1 id="video-title">
