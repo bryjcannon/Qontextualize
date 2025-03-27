@@ -1,10 +1,10 @@
 # Qontextualize - Scientific Claim Analysis for YouTube
 
-Qontext is a Chrome extension that helps users critically evaluate scientific claims made in YouTube videos. By leveraging advanced AI technology, Qontext analyzes video transcripts to identify, verify, and provide context for scientific claims in real-time.
+Qontextualize is a Chrome extension that helps users critically evaluate scientific claims made in YouTube videos. By leveraging advanced AI technology, Qontext analyzes video transcripts to identify, verify, and provide context for scientific claims in real-time.
 
 ## 🎯 Purpose
 
-In an era of information overload, distinguishing fact from fiction has become increasingly challenging. Podcasts and YouTube videos, while valuable sources of information, often contain a mix of scientific claims that can be difficult to verify. Qontext serves as your personal scientific fact-checker, helping you:
+In an era of information overload, distinguishing fact from fiction has become increasingly challenging. Podcasts and YouTube videos, while valuable sources of information, often contain a mix of scientific claims that can be difficult to verify. Qontextualize serves as your personal scientific fact-checker, helping you:
 
 - Identify strong scientific claims made during videos
 - Verify claims against current scientific consensus
