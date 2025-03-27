@@ -1,4 +1,17 @@
+import browserStorageService from './src/services/browser-storage-service.js';
+
 console.log('Qontextualize extension loaded on YouTube video page');
+
+// Function to parse timestamp to seconds
+function parseTimestamp(timestamp) {
+    const parts = timestamp.split(':').map(Number);
+    if (parts.length === 2) { // MM:SS
+        return parts[0] * 60 + parts[1];
+    } else if (parts.length === 3) { // HH:MM:SS
+        return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    }
+    return 0;
+}
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -48,32 +61,52 @@ async function extractTranscript() {
             transcriptData.push({ timestamp, text });
         });
 
-        const storageKey = `transcript_${videoId}`;
-        const analysisKey = `analysis_${videoId}`;
-
-        // Format transcript for summarization
-        const fullText = transcriptData.map(segment => segment.text).join(' ');
-
-        // Store in chrome.storage.local
-        await chrome.storage.local.set({
-            [storageKey]: {
-                videoId,
-                videoTitle,
-                timestamp: Date.now(),
-                segments: transcriptData,
-                fullText
-            },
-            [analysisKey]: null // Reset analysis when new transcript is extracted
-        });
-
-        // Send success message back to popup
-        chrome.runtime.sendMessage({ 
-            action: 'transcriptExtracted', 
-            success: true,
+        // Format transcript data for storage
+        const transcriptFormatted = {
             videoTitle,
-            videoId,
-            storageKey,
-            analysisKey
+            transcript: transcriptData.map(segment => ({
+                start: parseTimestamp(segment.timestamp),
+                end: parseTimestamp(segment.timestamp) + 5, // Approximate 5-second segments
+                text: segment.text
+            }))
+        };
+
+        // Save to browser storage service
+        try {
+            const { transcriptKey, analysisKey } = await browserStorageService.saveTranscript(
+                window.location.href,
+                transcriptFormatted
+            );
+
+            // Update popup with success
+            chrome.runtime.sendMessage({
+                action: 'transcriptSaved',
+                transcriptKey,
+                analysisKey
+            });
+        } catch (error) {
+            console.error('Error saving transcript:', error);
+            chrome.runtime.sendMessage({
+                action: 'error',
+                message: error.message
+            });
+        }
+    } catch (error) {
+        console.error('Error extracting transcript:', error);
+        chrome.runtime.sendMessage({
+            action: 'error',
+            message: error.message
+        });
+    }
+
+    } catch (error) {
+        console.error('Error extracting transcript:', error);
+        chrome.runtime.sendMessage({
+            action: 'error',
+            message: error.message
+        });
+    }
+
         });
     } catch (error) {
         console.error('Error extracting transcript:', error);
