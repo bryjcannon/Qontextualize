@@ -4,34 +4,99 @@
 
 // List of allowed domains for scientific sources
 const ALLOWED_DOMAINS = new Set([
-    // Academic domains
-    'nature.com',
-    'science.org',
-    'sciencedirect.com',
-    'springer.com',
-    'wiley.com',
-    'tandfonline.com',
-    'oup.com',
-    'ieee.org',
-    'acm.org',
-    'jstor.org',
-    
-    // Research institutions
-    'nih.gov',
-    'edu',
-    'ac.uk',
-    'edu.au',
-    
-    // Scientific organizations
-    'who.int',
-    'cdc.gov',
-    'europa.eu',
-    'nasa.gov',
-    
-    // Preprint servers
-    'arxiv.org',
-    'biorxiv.org',
-    'medrxiv.org',
+    // Academic Publishers & Journals
+  "nature.com",
+  "sciencemag.org",
+  "pnas.org",
+  "plos.org",
+  "cell.com",
+  "thelancet.com",
+  "bmj.com",
+  "nejm.org",
+  "science.org",
+  "sciencedirect.com",
+  "springer.com",
+  "link.springer.com",
+  "wiley.com",
+  "onlinelibrary.wiley.com",
+  "tandfonline.com",
+  "oup.com",
+  "academic.oup.com",
+  "journals.aps.org",
+  "arc.aiaa.org",
+  "iopscience.iop.org",
+  "pubs.acs.org",
+  "elsevier.com",
+  "sagepub.com",
+  "cambridge.org",
+  "oxfordjournals.org",
+  "emerald.com",
+  "degruyter.com",
+
+  // Preprint & Open Access
+  "arxiv.org",
+  "biorxiv.org",
+  "medrxiv.org",
+  "chemrxiv.org",
+  "researchsquare.com",
+  "f1000research.com",
+  "scienceopen.com",
+  "researchgate.net",
+
+  // Research Databases & Repositories
+  "pubmed.ncbi.nlm.nih.gov",
+  "ncbi.nlm.nih.gov",
+  "doi.org",
+  "jstor.org",
+  "ssrn.com",
+  "digitalcollections.nypl.org",
+  "archive.org",
+  "icpsr.umich.edu",
+
+  // Professional Societies & Organizations
+  "ieee.org",
+  "ieeeexplore.ieee.org",
+  "acm.org",
+  "dl.acm.org",
+  "aps.org",
+  "ams.org",
+  "acs.org",
+  "rsc.org",
+
+  // Research Institutions & Governmental Bodies
+  "nih.gov",
+  "usgs.gov",
+  "who.int",
+  "cdc.gov",
+  "europa.eu",
+  "nasa.gov",
+  "esa.int",
+  "fnal.gov",
+  "cern.ch",
+  "un.org",
+  "nber.org",
+  "edu",
+  "ac.uk",
+  "edu.au",
+
+  // Discipline-Specific Domains: Earth Science & Geology
+  "earthobservatory.nasa.gov",
+  "geosociety.org",
+
+  // Discipline-Specific Domains: Aviation
+  "faa.gov",
+  "easa.europa.eu",
+  "skybrary.aero",
+
+  // Discipline-Specific Domains: Climate Science
+  "climate.gov",
+  "ipcc.ch",
+  "climate.nasa.gov",
+
+  // Discipline-Specific Domains: History & Geography / Primary Sources
+  "loc.gov",
+  "nationalgeographic.com",
+  "geograph.org.uk"
     
     // Add more trusted domains as needed
 ]);
