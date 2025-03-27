@@ -15,14 +15,6 @@ const COST_PER_1K_TOKENS = {
     }
 };
 
-function calculateCost(model, inputTokens, outputTokens) {
-    const rates = COST_PER_1K_TOKENS[model] || COST_PER_1K_TOKENS['gpt-4'];
-    return (
-        (inputTokens / 1000) * rates.input +
-        (outputTokens / 1000) * rates.output
-    );
-}
-
 /**
  * Centralized service for handling OpenAI API interactions
  */
@@ -32,6 +24,21 @@ class OpenAIService {
         this.defaultModel = config.openai.defaultModel;
         this.maxRetries = config.openai.maxRetries;
         this.retryDelay = config.openai.retryDelay;
+    }
+
+    /**
+     * Calculate the cost of API usage based on model and token counts
+     * @param {string} model - The model used (e.g., 'gpt-4', 'gpt-3.5-turbo')
+     * @param {number} inputTokens - Number of input tokens
+     * @param {number} outputTokens - Number of output tokens
+     * @returns {number} Cost in USD
+     */
+    calculateCost(model, inputTokens, outputTokens) {
+        const rates = COST_PER_1K_TOKENS[model] || COST_PER_1K_TOKENS['gpt-4'];
+        return (
+            (inputTokens / 1000) * rates.input +
+            (outputTokens / 1000) * rates.output
+        );
     }
 
     /**
@@ -83,7 +90,7 @@ class OpenAIService {
                 apiStats.recordCall(
                     functionName,
                     inputTokens + outputTokens,
-                    calculateCost(model, inputTokens, outputTokens)
+                    this.calculateCost(model, inputTokens, outputTokens)
                 );
 
                 const content = response.choices[0].message.content;
@@ -118,6 +125,8 @@ Determine if this claim should be included in fact-checking based on:
 Return YES if it meets either criteria, even if the claim seems controversial, uncertain, or challenges mainstream views. We want to include important claims that need verification, not just obvious facts. Return NO only if the claim is completely abstract, personal opinion, or impossible to analyze.`;
 
         const response = await this.analyzeContent(filterPrompt);
+        const cost = this.calculateCost(this.defaultModel, filterPrompt.length, response.length);
+        apiStats.recordCall('filterClaim', response.length, cost);
         return response.toLowerCase().includes("yes");
     }
 
@@ -131,7 +140,10 @@ Return YES if it meets either criteria, even if the claim seems controversial, u
         const prompt = prompts.verifyClaim(claim, topic);
         
         try {
-            return await this.analyzeContent(prompt, { jsonResponse: true });
+            const response = await this.analyzeContent(prompt, { jsonResponse: true });
+            const cost = this.calculateCost(this.defaultModel, prompt.length, JSON.stringify(response).length);
+            apiStats.recordCall('verifyClaim', JSON.stringify(response).length, cost);
+            return response;
         } catch (error) {
             console.error(`Error verifying claim '${topic}':`, error);
             return {
@@ -174,6 +186,8 @@ Return YES if it meets either criteria, even if the claim seems controversial, u
             }
 
             const data = await response.json();
+            const cost = this.calculateCost(this.defaultModel, transcript.length, data.summary.length);
+            apiStats.recordCall('summarizeTranscript', data.summary.length, cost);
             return data.summary;
         } catch (error) {
             console.error('Error summarizing transcript:', error);
@@ -194,6 +208,9 @@ Return YES if it meets either criteria, even if the claim seems controversial, u
                     model: config.openai.embeddingModel,
                     input: text
                 });
+                // Calculate cost based on embedding model pricing
+                const cost = this.calculateCost(config.openai.embeddingModel, text.length, 0);
+                apiStats.recordCall('getEmbedding', text.length, cost);
                 return response.data[0].embedding;
             } catch (error) {
                 console.error(`Attempt ${attempt} failed:`, error);
