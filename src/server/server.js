@@ -7,6 +7,7 @@ import { dirname, join } from 'path';
 import path from 'path';
 import { generateFinalReport } from '../services/report-generator.js';
 import { apiStats } from '../utils/api-stats.js';
+import { saveStatsToCSV } from '../utils/stats-logger.js';
 
 // Set up __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -44,7 +45,7 @@ const timingMiddleware = (req, res, next) => {
 // Add timing middleware to analyze endpoint
 app.post('/api/analyze', timingMiddleware, async (req, res) => {
     try {
-        const { transcript, clientStartTime, fullReport } = req.body;
+        const { transcript, clientStartTime, fullReport, saveLocalData } = req.body;
         
         if (!transcript) {
             return res.status(400).json({ error: 'Transcript is required' });
@@ -90,6 +91,11 @@ app.post('/api/analyze', timingMiddleware, async (req, res) => {
         console.log(`💰 Total Cost: $${totalCost.toFixed(4)}`);
         console.log('==============================\n');
 
+        // Save stats to CSV only if saveLocalData is enabled
+        if (saveLocalData) {
+            await saveStatsToCSV(stats, req.startTime, totalProcessingTime / 1000);
+        }
+
         res.json(report);
     } catch (error) {
         console.error('Error:', error);
@@ -109,5 +115,5 @@ app.get('/health', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-console.log('Claim analysis service ready');
+    console.log('Claim analysis service ready');
 });
