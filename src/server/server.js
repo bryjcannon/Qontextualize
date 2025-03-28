@@ -3,9 +3,10 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { config as dotenvConfig } from 'dotenv';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { dirname, join } from 'path';
 import path from 'path';
 import { generateFinalReport } from '../services/report-generator.js';
+import { apiStats } from '../utils/api-stats.js';
 
 // Set up __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -68,6 +69,26 @@ app.post('/api/analyze', timingMiddleware, async (req, res) => {
         console.log(`🕒 Total Processing Time: ${(totalProcessingTime / 1000).toFixed(2)}s`);
         console.log(`📅 Completed at: ${new Date(timestamp).toLocaleString()}`);
         console.log('==================================\n');
+
+        // Log API usage summary
+        const stats = apiStats.stats;
+        const totalCalls = Object.values(stats.callsByFunction).reduce((sum, func) => sum + func.calls, 0);
+        const totalTokens = Object.values(stats.callsByFunction).reduce((sum, func) => sum + func.tokens, 0);
+        const totalCost = Object.values(stats.callsByFunction).reduce((sum, func) => sum + func.cost, 0);
+
+        console.log('=== OpenAI API Usage Summary ===');
+        console.log('📊 Usage by Function:');
+        Object.entries(stats.callsByFunction).forEach(([funcName, funcStats]) => {
+            console.log(`  ${funcName}:`);
+            console.log(`    🔄 Calls: ${funcStats.calls}`);
+            console.log(`    📝 Tokens: ${funcStats.tokens}`);
+            console.log(`    💰 Cost: $${funcStats.cost.toFixed(4)}`);
+        });
+        console.log('\n📈 Total Usage:');
+        console.log(`🔄 Total API Calls: ${totalCalls}`);
+        console.log(`📝 Total Tokens Used: ${totalTokens}`);
+        console.log(`💰 Total Cost: $${totalCost.toFixed(4)}`);
+        console.log('==============================\n');
 
         res.json(report);
     } catch (error) {

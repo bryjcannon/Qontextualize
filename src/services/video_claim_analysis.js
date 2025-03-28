@@ -160,9 +160,13 @@ async function fetchSources(claim) {
 
     try {
         console.log(`🔍 Fetching sources for claim: ${claim}`);
+        const startTime = Date.now();
         const prompt = prompts.getSources(claim);
 
+        // Track API usage for source fetching
         const result = await openaiService.analyzeContent(prompt, { jsonResponse: true });
+        const cost = openaiService.calculateCost(openaiService.defaultModel, prompt.length, JSON.stringify(result).length);
+        apiStats.recordCall('fetchSources', JSON.stringify(result).length, cost);
         
         if (!result.sources || !Array.isArray(result.sources)) {
             console.warn('No valid sources returned for claim:', claim);
@@ -200,12 +204,27 @@ async function fetchSources(claim) {
                     journal: source.journal || '',
                     year: source.year || '',
                     citations: source.citations || 0,
-                    domain
+                    domain,
+                    // Add source quality metrics
+                    isPeerReviewed: Boolean(source.journal),
+                    publishedDate: source.year ? `${source.year}-01-01` : null
                 };
             })
             .filter(Boolean); // Remove null entries
 
-        console.log(`📚 Found ${validSources.length} valid sources for claim`);
+        // Get source fetching stats
+        const stats = apiStats.stats.callsByFunction['fetchSources'] || { calls: 0, tokens: 0, cost: 0 };
+        const processingTime = ((Date.now() - startTime) / 1000).toFixed(2);
+        
+        // Log detailed source fetching metrics
+        console.log('\n=== Source Fetching Metrics ===');
+        console.log(`📊 Found ${validSources.length} valid sources`);
+        console.log(`⚡ Processing time: ${processingTime}s`);
+        console.log(`🔄 API calls made: ${stats.calls}`);
+        console.log(`📝 Total tokens used: ${stats.tokens}`);
+        console.log(`💰 Total cost: $${stats.cost.toFixed(4)}`);
+        console.log('============================\n');
+
         return validSources;
 
     } catch (error) {
