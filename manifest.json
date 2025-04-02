@@ -1,19 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "Qontextualize",
-  "version": "1.0",
-  "description": "A Chrome extension that works only on YouTube videos.",
+  "name": "Qontext",
+  "version": "1.0.0",
+  "description": "Analyze YouTube video transcripts and fact-check claims",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
   "host_permissions": [
-    "https://www.youtube.com/watch?v=*",
-    "http://localhost:3000/*",
-    "https://www.googleapis.com/customsearch/*"
+    "https://api.qontextualize.com/*",
+    "https://www.youtube.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -25,7 +28,7 @@
     }
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'"
   },
   "web_accessible_resources": [{
     "resources": ["transcript.html", "transcript.js"],

@@ -94,6 +94,24 @@ MIT License - See LICENSE file for details
 - YouTube Data API
 - Scientific research community
 
+## Deployment to Render
+
+1. Create a new Web Service on Render
+2. Connect your GitHub repository
+3. Configure the following settings:
+   - Build Command: `yarn install`
+   - Start Command: `yarn start`
+   - Environment Variables:
+     - `NODE_ENV`: production
+     - `PORT`: 3000
+     - `OPENAI_API_KEY`: Your OpenAI API key
+     - `OPENAI_MODEL`: gpt-4-turbo-preview
+     - `RATE_LIMIT_WINDOW_MS`: 900000
+     - `RATE_LIMIT_MAX_REQUESTS`: 100
+     - `CORS_ORIGIN`: Your frontend domain
+
+4. Deploy! Render will automatically build and deploy your application.
+
 ---
 
 Made with ❤️ for truth-seekers and critical thinkers

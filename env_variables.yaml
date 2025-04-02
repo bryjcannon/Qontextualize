@@ -1,0 +1,42 @@
+env_variables:
+  # OpenAI API Configuration
+  OPENAI_API_KEY: ""  # To be filled in deployment
+  OPENAI_MODEL: "gpt-4-turbo-preview"
+  OPENAI_EMBEDDING_MODEL: "text-embedding-ada-002"
+  OPENAI_MAX_RETRIES: "3"
+  OPENAI_RETRY_DELAY: "1000"
+  OPENAI_TEMPERATURE: "0.1"
+  OPENAI_MAX_TOKENS: "4000"
+
+  # Server Configuration
+  PORT: "8080"
+  NODE_ENV: "production"
+
+  # CORS Configuration
+  CORS_ORIGIN: "chrome-extension://ldgnmkahkefapikcfmllhglmoankokla,https://www.youtube.com"
+  API_URL: "https://api.qontextualize.com"
+  EXTENSION_ID: "ldgnmkahkefapikcfmllhglmoankokla"
+
+  # Rate Limiting
+  RATE_LIMIT_WINDOW_MS: "900000"  # 15 minutes
+  RATE_LIMIT_MAX_REQUESTS: "100"
+
+  # Transcript Processing
+  TRANSCRIPT_MAX_TOKENS: "15000"
+  TRANSCRIPT_OVERLAP_TOKENS: "200"
+  TRANSCRIPT_MIN_CHUNK_LENGTH: "100"
+  TRANSCRIPT_MAX_CHUNKS: "100"
+  TRANSCRIPT_MIN_SENTENCE_LENGTH: "10"
+
+  # Claims Processing
+  MIN_CLAIM_LENGTH: "5"
+  MAX_CLAIMS_PER_CHUNK: "10"
+  SIMILARITY_THRESHOLD: "0.85"
+  MAX_SOURCES_PER_CLAIM: "5"
+  MAX_EVIDENCE_POINTS: "5"
+  RECENT_SOURCE_YEARS: "5"
+
+  # Performance Configuration
+  MAX_BATCH_SIZE: "1000"
+  DEFAULT_BATCH_SIZE: "5"
+  BATCH_CONCURRENCY: "5"
