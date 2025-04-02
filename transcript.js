@@ -274,9 +274,10 @@ async function analyzeTranscript(transcriptData, analysisKey) {
         const response = await fetch(config.PROXY_API_ENDPOINT, {
             method: 'POST',
             mode: 'cors',
-            credentials: 'include',
+            credentials: 'same-origin', // Changed from 'include' since we don't need cookies
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
                 transcript: transcriptData.fullText,
@@ -287,7 +288,8 @@ async function analyzeTranscript(transcriptData, analysisKey) {
         });
 
         if (!response.ok) {
-            throw new Error(`Server error: ${response.status}`);
+            const errorText = await response.text();
+            throw new Error(`Server error: ${response.status}\n${errorText}`);
         }
 
         const analysis = await response.json();

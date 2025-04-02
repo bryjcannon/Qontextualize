@@ -24,18 +24,24 @@ const app = express();
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100 // limit each IP to 100 requests per windowMs
+    max: 1000, // increase limit for development
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: 'Too many requests from this IP, please try again later.'
 });
 
 // Middleware
-app.use(cors({
-    origin: true, // This allows all origins but checks them against the allowed list
-    methods: ['POST', 'GET', 'OPTIONS'],
-    allowedHeaders: ['Content-Type'],
-    credentials: true
-}));
 app.use(express.json({ limit: '50mb' }));
-app.use(limiter);
+app.use(cors({
+    origin: true,
+    methods: ['POST', 'GET', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    optionsSuccessStatus: 200
+}));
+
+// Apply rate limiting only to /api routes
+app.use('/api', limiter);
 
 // Timing middleware
 const timingMiddleware = (req, res, next) => {
