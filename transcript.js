@@ -273,6 +273,8 @@ async function analyzeTranscript(transcriptData, analysisKey) {
         // Call server API to analyze transcript
         const response = await fetch(config.PROXY_API_ENDPOINT, {
             method: 'POST',
+            mode: 'cors',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -280,7 +282,7 @@ async function analyzeTranscript(transcriptData, analysisKey) {
                 transcript: transcriptData.fullText,
                 clientStartTime,
                 fullReport: fullReportEnabled,
-                saveLocalData: saveLocalData?.saveLocalData ?? false // Use setting from storage or default to false
+                saveLocalData: saveLocalData?.saveLocalData ?? false
             })
         });
 

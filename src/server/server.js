@@ -29,7 +29,7 @@ const limiter = rateLimit({
 
 // Middleware
 app.use(cors({
-    origin: ['chrome-extension://khkgofpfbckbnllmljfkfephjonambpj', 'https://api.qontextualize.com', 'http://localhost:3000'],
+    origin: true, // This allows all origins but checks them against the allowed list
     methods: ['POST', 'GET', 'OPTIONS'],
     allowedHeaders: ['Content-Type'],
     credentials: true
