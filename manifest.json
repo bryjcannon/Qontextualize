@@ -9,11 +9,18 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
   "host_permissions": [
     "https://www.youtube.com/watch?v=*",
     "http://localhost:3000/*",
-    "https://www.googleapis.com/customsearch/*"
+    "https://www.googleapis.com/customsearch/*",
+    "chrome-extension://khkgofpfbckbnllmljfkfephjonambpj",
+    "https://api.qontextualize.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
