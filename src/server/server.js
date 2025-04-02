@@ -29,8 +29,8 @@ const limiter = rateLimit({
 
 // Middleware
 app.use(cors({
-    origin: ['chrome-extension://*', 'http://localhost:3000'],
-    methods: ['POST'],
+    origin: ['chrome-extension://*', 'https://api.qontextualize.com', 'http://localhost:3000'],
+    methods: ['POST', 'GET'],
     allowedHeaders: ['Content-Type']
 }));
 app.use(express.json({ limit: '50mb' }));
