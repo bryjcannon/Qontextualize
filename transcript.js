@@ -274,10 +274,9 @@ async function analyzeTranscript(transcriptData, analysisKey) {
         const response = await fetch(config.PROXY_API_ENDPOINT, {
             method: 'POST',
             mode: 'cors',
-            credentials: 'same-origin', // Changed from 'include' since we don't need cookies
+            credentials: 'omit',
             headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 transcript: transcriptData.fullText,
