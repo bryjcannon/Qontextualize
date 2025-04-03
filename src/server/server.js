@@ -5,6 +5,7 @@ import { config as dotenvConfig } from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import path from 'path';
+import fs from 'fs';
 import { generateFinalReport } from '../services/report-generator.js';
 import { apiStats } from '../utils/api-stats.js';
 import { saveStatsToCSV } from '../utils/stats-logger.js';
@@ -18,6 +19,25 @@ dotenvConfig({ path: path.resolve(__dirname, '../.env') });
 
 // Log server startup
 console.log('🚀 Server environment loaded');
+
+// Create data directory and settings if they don't exist
+const dataDir = path.join(process.cwd(), 'data');
+const settingsPath = path.join(dataDir, 'settings.json');
+
+try {
+    if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+    }
+    if (!fs.existsSync(settingsPath)) {
+        fs.writeFileSync(settingsPath, JSON.stringify({
+            defaultSettings: true,
+            saveLocalData: false,
+            fullReport: true
+        }, null, 2));
+    }
+} catch (error) {
+    console.log('Warning: Could not create settings file:', error.message);
+}
 
 const app = express();
 

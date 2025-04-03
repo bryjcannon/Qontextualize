@@ -5,7 +5,8 @@ node_modules/
 .env
 
 # Data directory
-data/
+data/*
+!data/settings.json
 
 # IDE and editor files
 .vscode/
