@@ -101,15 +101,13 @@ app.post('/api/analyze', timingMiddleware, async (req, res) => {
 });
 
 app.get('/api/analyze/progress', (req, res) => {
+    // Add CORS headers specifically for SSE
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-    // Immediately flush headers
-    res.flushHeaders();
 
     // Send initial connection established message
     res.write('data: {"status":"connected"}\n\n');
@@ -118,16 +116,15 @@ app.get('/api/analyze/progress', (req, res) => {
         console.log('Sending progress event:', step);
         const message = JSON.stringify({ step });
         res.write(`data: ${message}\n\n`);
-        // Force flush the response
-        res.flush();
     };
 
     progressEmitter.on('progress', sendProgress);
 
-    // Keep connection alive
+    // Keep connection alive with periodic comments
     const keepAlive = setInterval(() => {
-        res.write(':\n\n');
-        res.flush();
+        if (!res.writableEnded) {
+            res.write(':\n\n');
+        }
     }, 30000);
 
     req.on('close', () => {
