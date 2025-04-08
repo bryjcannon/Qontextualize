@@ -123,6 +123,7 @@
             color: #ffffff;
             margin: 40px 0 20px;
             font-weight: 500;
+            text-shadow: 0 0 10px #7a3fcb;
         }
 
         .claim-content {
@@ -438,6 +439,25 @@
                 font-size: 16px;
             }
         }
+
+        .section-divider {
+            height: 2px;
+            background: #19cc5f; /* Neon-ish green */
+            margin: 30px 0;
+            border: none;
+            box-shadow: 0 0 5px #19cc5f;
+        }
+
+        #video-title {
+            color: #e0e0e0;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px #7a3fcb;
+        }
+
+        .section-header {
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -451,12 +471,16 @@
         Loading video title...
     </h1>
 
-    <h2>Summary of the Video</h2>
+    <hr class="section-divider">
+
+    <h2 class="section-header">Summary of the Video</h2>
     <div id="video-summary" class="summary-section">
         Loading video summary...
     </div>
 
-    <h2>Strong Claims and Their Evaluation</h2>
+    <hr class="section-divider">
+
+    <h2 class="section-header">Strong Claims and Their Evaluation</h2>
     <div class="claims-intro">
         Below are key claims made in the conversation, along with an assessment of their validity based on scientific consensus.
     </div>

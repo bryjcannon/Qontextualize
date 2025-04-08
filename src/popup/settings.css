@@ -53,3 +53,7 @@
         transform: translate(-50%, 0);
     }
 }
+
+.hidden-setting {
+    display: none !important;
+}
