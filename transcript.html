@@ -458,13 +458,91 @@
             margin-top: 40px;
             margin-bottom: 20px;
         }
+
+        .progress-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            width: 300px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: var(--bg-tertiary);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0;
+            background-color: #19cc5f;
+            transition: width 0.5s ease-in-out;
+            box-shadow: 0 0 10px #19cc5f;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            padding: 0 10px;
+            position: relative;
+        }
+
+        .progress-step {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+            position: relative;
+            flex: 1;
+        }
+
+        .progress-step.completed {
+            color: #19cc5f;
+            font-weight: 500;
+        }
+
+        .progress-step::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 50%;
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+        }
+
+        .progress-step.completed::before {
+            background: #19cc5f;
+            box-shadow: 0 0 5px #19cc5f;
+        }
     </style>
 </head>
 <body>
     <div id="loading-screen" class="loading-screen">
-        <div class="loading-q">Q</div>
-        <div class="loading-text">
-            Processing<span class="dots">...</span>
+        <div class="loading-content">
+            <div class="loading-q">Q</div>
+            <div class="loading-text">
+                Processing<span class="dots">...</span>
+            </div>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <div class="progress-steps">
+                <div class="progress-step" data-step="transcript">Transcript</div>
+                <div class="progress-step" data-step="claims">Claims</div>
+                <div class="progress-step" data-step="verification">Verification</div>
+                <div class="progress-step" data-step="sources">Sources</div>
+                <div class="progress-step" data-step="report">Report</div>
+            </div>
         </div>
     </div>
     <h1 id="video-title">

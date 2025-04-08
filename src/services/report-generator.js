@@ -4,12 +4,14 @@ import openaiService from './openai-service.js';
 import storageService from './storage-service.js';
 import { config } from '../config/index.js';
 
-async function generateFinalReport(transcript) {
+async function generateFinalReport(transcript, { onProgress }) {
     try {
         // Process transcript to get claims and summary
+        onProgress('claims');
         const { claims, finalSummaryResponse } = await processTranscript(transcript);
         
         console.log('Verifying claims...');
+        onProgress('verification');
         const verifiedClaims = await verifyClaims(claims);
 
         // If no claims were found or verified, save empty report and return
@@ -24,12 +26,14 @@ async function generateFinalReport(transcript) {
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             await storageService.saveClaimsData(report, 'report', timestamp);
             
+            onProgress('report');
             return report;
         }
         
 
 
         // Process all claims in parallel
+        onProgress('sources');
         let processedClaims = await Promise.all(
             claims.split('\n')
                 .filter(claim => claim.trim() && claim.includes(':'))
@@ -165,6 +169,7 @@ async function generateFinalReport(transcript) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         await storageService.saveClaimsData(report, 'report', timestamp);
 
+        onProgress('report');
         // Export report to CSV
         const csvData = report.claims.map(claim => ({
             Title: claim.title,

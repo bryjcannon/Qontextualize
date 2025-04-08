@@ -9,6 +9,7 @@ import fs from 'fs';
 import { generateFinalReport } from '../services/report-generator.js';
 import { apiStats } from '../utils/api-stats.js';
 import { saveStatsToCSV } from '../utils/stats-logger.js';
+import { EventEmitter } from 'events';
 
 // Set up __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -40,6 +41,8 @@ try {
 }
 
 const app = express();
+
+const progressEmitter = new EventEmitter();
 
 // Rate limiting
 const limiter = rateLimit({
@@ -73,17 +76,18 @@ const timingMiddleware = (req, res, next) => {
 app.post('/api/analyze', timingMiddleware, async (req, res) => {
     try {
         const { transcript, clientStartTime, fullReport, saveLocalData } = req.body;
-        
+
         if (!transcript) {
-            return res.status(400).json({ error: 'Transcript is required' });
+            throw new Error('No transcript provided');
         }
 
-        // Set full report environment variable for this request
-        process.env.FULL_REPORT = fullReport ? 'true' : 'false';
+        progressEmitter.emit('progress', 'transcript');
 
-        console.log('Analyzing transcript...');
-        const report = await generateFinalReport(transcript);
-        console.log('Analysis complete');
+        const report = await generateFinalReport(transcript, {
+            onProgress: (step) => {
+                progressEmitter.emit('progress', step);
+            }
+        });
 
         // Calculate and log timing metrics
         const serverProcessingTime = Date.now() - req.startTime;
@@ -132,6 +136,22 @@ app.post('/api/analyze', timingMiddleware, async (req, res) => {
             markdown: `Error analyzing transcript: ${error.message}`
         });
     }
+});
+
+app.get('/api/analyze/progress', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    const sendProgress = (step) => {
+        res.write(`data: ${JSON.stringify({ step })}\n\n`);
+    };
+
+    progressEmitter.on('progress', sendProgress);
+
+    req.on('close', () => {
+        progressEmitter.removeListener('progress', sendProgress);
+    });
 });
 
 // Health check endpoint

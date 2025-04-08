@@ -1,5 +1,23 @@
 import config from './src/config/config.browser.js';
 
+// Add at the top with other functions
+function updateProgress(step) {
+    const steps = ['transcript', 'claims', 'verification', 'sources', 'report'];
+    const stepIndex = steps.indexOf(step);
+    const progress = ((stepIndex + 1) / steps.length) * 100;
+    
+    // Update progress bar fill
+    const progressFill = document.querySelector('.progress-fill');
+    progressFill.style.width = `${progress}%`;
+    
+    // Update step indicators
+    const progressSteps = document.querySelectorAll('.progress-step');
+    progressSteps.forEach((stepEl, index) => {
+        if (index <= stepIndex) {
+            stepEl.classList.add('completed');
+        }
+    });
+}
 
 function formatSources(sources) {
     console.log('📖 Formatting sources:', sources);
@@ -261,14 +279,20 @@ function displayAnalysis(analysis) {
     });
 }
 
-
 async function analyzeTranscript(transcriptData, analysisKey) {
     try {
         const clientStartTime = Date.now();
         
+        // Show loading screen
+        const loadingScreen = document.getElementById('loading-screen');
+        loadingScreen.style.display = 'flex';
+        
         // Get settings from storage
         const { fullReportEnabled } = await chrome.storage.local.get('fullReportEnabled');
         const { saveLocalData } = await chrome.storage.sync.get('settings');
+        
+        // Update progress for transcript extraction
+        updateProgress('transcript');
         
         // Call server API to analyze transcript
         const response = await fetch(config.PROXY_API_ENDPOINT, {
@@ -287,11 +311,25 @@ async function analyzeTranscript(transcriptData, analysisKey) {
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Server error: ${response.status}\n${errorText}`);
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
+        // Set up server-sent events to listen for progress updates
+        const eventSource = new EventSource(`${config.PROXY_API_ENDPOINT}/progress`);
+        
+        eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.step) {
+                updateProgress(data.step);
+            }
+        };
+
+        eventSource.onerror = () => {
+            eventSource.close();
+        };
+
         const analysis = await response.json();
+        eventSource.close();
 
         // Store analysis
         await chrome.storage.local.set({
@@ -301,9 +339,26 @@ async function analyzeTranscript(transcriptData, analysisKey) {
             }
         });
 
+        // Ensure progress bar completes
+        updateProgress('report');
+
+        // Hide loading screen with fade out
+        loadingScreen.style.opacity = '0';
+        loadingScreen.style.transition = 'opacity 0.5s ease-out';
+        
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+            loadingScreen.style.opacity = '1';
+        }, 500);
+
         return analysis;
     } catch (error) {
         console.error('Error analyzing transcript:', error);
+        
+        // Hide loading screen on error
+        const loadingScreen = document.getElementById('loading-screen');
+        loadingScreen.style.display = 'none';
+        
         throw error;
     }
 }
