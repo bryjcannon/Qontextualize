@@ -7,10 +7,11 @@ import { config } from '../config/index.js';
 async function generateFinalReport(transcript, { onProgress }) {
     try {
         // Process transcript to get claims and summary
+        console.log('Starting claim extraction...');
         onProgress('claims');
         const { claims, finalSummaryResponse } = await processTranscript(transcript);
         
-        console.log('Verifying claims...');
+        console.log('Starting claim verification...');
         onProgress('verification');
         const verifiedClaims = await verifyClaims(claims);
 
@@ -26,13 +27,12 @@ async function generateFinalReport(transcript, { onProgress }) {
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             await storageService.saveClaimsData(report, 'report', timestamp);
             
+            console.log('Completing report generation...');
             onProgress('report');
             return report;
         }
-        
 
-
-        // Process all claims in parallel
+        console.log('Starting source finding...');
         onProgress('sources');
         let processedClaims = await Promise.all(
             claims.split('\n')
@@ -169,6 +169,7 @@ async function generateFinalReport(transcript, { onProgress }) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         await storageService.saveClaimsData(report, 'report', timestamp);
 
+        console.log('Completing report generation...');
         onProgress('report');
         // Export report to CSV
         const csvData = report.claims.map(claim => ({

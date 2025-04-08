@@ -2,19 +2,26 @@ import config from './src/config/config.browser.js';
 
 // Add at the top with other functions
 function updateProgress(step) {
+    console.log('Updating progress:', step);
     const steps = ['transcript', 'claims', 'verification', 'sources', 'report'];
     const stepIndex = steps.indexOf(step);
     const progress = ((stepIndex + 1) / steps.length) * 100;
     
     // Update progress bar fill
     const progressFill = document.querySelector('.progress-fill');
-    progressFill.style.width = `${progress}%`;
+    if (progressFill) {
+        console.log('Setting progress width to:', `${progress}%`);
+        progressFill.style.width = `${progress}%`;
+    } else {
+        console.error('Progress fill element not found');
+    }
     
     // Update step indicators
     const progressSteps = document.querySelectorAll('.progress-step');
     progressSteps.forEach((stepEl, index) => {
         if (index <= stepIndex) {
             stepEl.classList.add('completed');
+            console.log('Marking step completed:', steps[index]);
         }
     });
 }
@@ -294,6 +301,30 @@ async function analyzeTranscript(transcriptData, analysisKey) {
         // Update progress for transcript extraction
         updateProgress('transcript');
         
+        // Set up server-sent events before making the API call
+        const eventSource = new EventSource(`${config.PROXY_API_ENDPOINT}/analyze/progress`);
+        
+        eventSource.onopen = () => {
+            console.log('SSE connection opened');
+        };
+        
+        eventSource.onmessage = (event) => {
+            console.log('Progress event received:', event.data);
+            try {
+                const data = JSON.parse(event.data);
+                if (data.step) {
+                    updateProgress(data.step);
+                }
+            } catch (e) {
+                console.error('Error parsing progress data:', e);
+            }
+        };
+
+        eventSource.onerror = (error) => {
+            console.error('SSE error:', error);
+            eventSource.close();
+        };
+        
         // Call server API to analyze transcript
         const response = await fetch(config.PROXY_API_ENDPOINT, {
             method: 'POST',
@@ -314,22 +345,9 @@ async function analyzeTranscript(transcriptData, analysisKey) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        // Set up server-sent events to listen for progress updates
-        const eventSource = new EventSource(`${config.PROXY_API_ENDPOINT}/progress`);
-        
-        eventSource.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.step) {
-                updateProgress(data.step);
-            }
-        };
-
-        eventSource.onerror = () => {
-            eventSource.close();
-        };
-
         const analysis = await response.json();
         eventSource.close();
+        console.log('SSE connection closed');
 
         // Store analysis
         await chrome.storage.local.set({

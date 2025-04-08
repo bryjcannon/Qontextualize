@@ -81,60 +81,23 @@ app.post('/api/analyze', timingMiddleware, async (req, res) => {
             throw new Error('No transcript provided');
         }
 
+        console.log('Starting analysis...');
         progressEmitter.emit('progress', 'transcript');
 
         const report = await generateFinalReport(transcript, {
             onProgress: (step) => {
+                console.log('Progress update:', step);
                 progressEmitter.emit('progress', step);
             }
         });
 
-        // Calculate and log timing metrics
-        const serverProcessingTime = Date.now() - req.startTime;
-        const totalProcessingTime = Date.now() - (clientStartTime || req.startTime);
-        const timestamp = new Date().toISOString();
-
-        // Log detailed timing information to terminal
-        console.log('\n=== Video Analysis Timing Metrics ===');
-        console.log(`🎯 Analysis Request ID: ${req.startTime}`);
-        console.log(`⚡ Server Processing Time: ${(serverProcessingTime / 1000).toFixed(2)}s`);
-        console.log(`🕒 Total Processing Time: ${(totalProcessingTime / 1000).toFixed(2)}s`);
-        console.log(`📅 Completed at: ${new Date(timestamp).toLocaleString()}`);
-        console.log('==================================\n');
-
-        // Log API usage summary
-        const stats = apiStats.stats;
-        const totalCalls = Object.values(stats.callsByFunction).reduce((sum, func) => sum + func.calls, 0);
-        const totalTokens = Object.values(stats.callsByFunction).reduce((sum, func) => sum + func.tokens, 0);
-        const totalCost = Object.values(stats.callsByFunction).reduce((sum, func) => sum + func.cost, 0);
-
-        console.log('=== OpenAI API Usage Summary ===');
-        console.log('📊 Usage by Function:');
-        Object.entries(stats.callsByFunction).forEach(([funcName, funcStats]) => {
-            console.log(`  ${funcName}:`);
-            console.log(`    🔄 Calls: ${funcStats.calls}`);
-            console.log(`    📝 Tokens: ${funcStats.tokens}`);
-            console.log(`    💰 Cost: $${funcStats.cost.toFixed(4)}`);
-        });
-        console.log('\n📈 Total Usage:');
-        console.log(`🔄 Total API Calls: ${totalCalls}`);
-        console.log(`📝 Total Tokens Used: ${totalTokens}`);
-        console.log(`💰 Total Cost: $${totalCost.toFixed(4)}`);
-        console.log('==============================\n');
-
-        // Save stats to CSV only if saveLocalData is enabled
-        if (saveLocalData) {
-            await saveStatsToCSV(stats, req.startTime, totalProcessingTime / 1000);
-        }
+        // Log API stats before sending response
+        await logApiStats();
 
         res.json(report);
     } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({
-            error: error.message,
-            claims: [],
-            markdown: `Error analyzing transcript: ${error.message}`
-        });
+        console.error('Error in /api/analyze:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -142,14 +105,20 @@ app.get('/api/analyze/progress', (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
+    // Send initial connection established message
+    res.write('data: {"status":"connected"}\n\n');
 
     const sendProgress = (step) => {
+        console.log('Sending progress event:', step);
         res.write(`data: ${JSON.stringify({ step })}\n\n`);
     };
 
     progressEmitter.on('progress', sendProgress);
 
     req.on('close', () => {
+        console.log('Client disconnected from progress events');
         progressEmitter.removeListener('progress', sendProgress);
     });
 });
