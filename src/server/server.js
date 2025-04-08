@@ -90,9 +90,6 @@ app.post('/api/analyze', timingMiddleware, async (req, res) => {
             }
         });
 
-        // Log API stats before sending response
-        await logApiStats();
-
         res.json(report);
     } catch (error) {
         console.error('Error in /api/analyze:', error);
