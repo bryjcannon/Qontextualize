@@ -42,25 +42,31 @@
             pointer-events: none;
         }
 
+        .loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 30px;
+        }
+
         .loading-q {
-            font-size: 120px;
-            font-weight: 900;
-            font-family: 'Century Gothic Bold', 'Century Gothic', sans-serif;
-            animation: gradientShift 2s ease-in-out infinite,
-                     float 3s ease-in-out infinite;
-            text-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 128px;
+            height: 128px;
+            animation: pulse 2s infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            filter: drop-shadow(0 0 10px #19cc5f);
         }
 
-        .loading-text {
-            margin-top: 20px;
-            font-size: 24px;
-            font-family: 'Arial', sans-serif;
-            color: #666;
-        }
-
-        .dots::after {
-            content: '.';
-            animation: dots 1.5s steps(1) infinite;
+        .loading-q img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         /* Hide loading screen when content is ready */
@@ -464,7 +470,7 @@
             padding: 15px;
             background: var(--bg-secondary);
             border-radius: 8px;
-            width: 300px;
+            width: 600px;
         }
 
         .progress-bar {
@@ -522,14 +528,28 @@
             background: #19cc5f;
             box-shadow: 0 0 5px #19cc5f;
         }
+
+        @keyframes pulse {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                filter: drop-shadow(0 0 10px #19cc5f);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                filter: drop-shadow(0 0 15px #19cc5f);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                filter: drop-shadow(0 0 10px #19cc5f);
+            }
+        }
     </style>
 </head>
 <body>
     <div id="loading-screen" class="loading-screen">
         <div class="loading-content">
-            <div class="loading-q">Q</div>
-            <div class="loading-text">
-                Processing<span class="dots">...</span>
+            <div class="loading-q">
+                <img src="icons/icon512.png" alt="Loading icon">
             </div>
         </div>
         <div class="progress-container">
