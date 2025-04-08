@@ -302,10 +302,11 @@ async function analyzeTranscript(transcriptData, analysisKey) {
         updateProgress('transcript');
         
         // Set up server-sent events before making the API call
-        const eventSource = new EventSource(`${config.PROXY_API_ENDPOINT}/analyze/progress`);
+        const progressEndpoint = config.PROXY_API_ENDPOINT.replace('/api/analyze', '/api/analyze/progress');
+        const eventSource = new EventSource(progressEndpoint);
         
         eventSource.onopen = () => {
-            console.log('SSE connection opened');
+            console.log('SSE connection opened to:', progressEndpoint);
         };
         
         eventSource.onmessage = (event) => {

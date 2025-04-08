@@ -56,11 +56,10 @@ const limiter = rateLimit({
 // Middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(cors({
-    origin: true,
-    methods: ['POST', 'GET', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    optionsSuccessStatus: 200
+    origin: '*',
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type'],
+    credentials: true
 }));
 
 // Apply rate limiting only to /api routes
@@ -106,19 +105,34 @@ app.get('/api/analyze/progress', (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    // Immediately flush headers
+    res.flushHeaders();
 
     // Send initial connection established message
     res.write('data: {"status":"connected"}\n\n');
 
     const sendProgress = (step) => {
         console.log('Sending progress event:', step);
-        res.write(`data: ${JSON.stringify({ step })}\n\n`);
+        const message = JSON.stringify({ step });
+        res.write(`data: ${message}\n\n`);
+        // Force flush the response
+        res.flush();
     };
 
     progressEmitter.on('progress', sendProgress);
 
+    // Keep connection alive
+    const keepAlive = setInterval(() => {
+        res.write(':\n\n');
+        res.flush();
+    }, 30000);
+
     req.on('close', () => {
         console.log('Client disconnected from progress events');
+        clearInterval(keepAlive);
         progressEmitter.removeListener('progress', sendProgress);
     });
 });

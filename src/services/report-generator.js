@@ -5,14 +5,22 @@ import storageService from './storage-service.js';
 import { config } from '../config/index.js';
 
 async function generateFinalReport(transcript, { onProgress }) {
+    if (!onProgress) {
+        onProgress = () => {}; // No-op if not provided
+    }
+
     try {
         // Process transcript to get claims and summary
         console.log('Starting claim extraction...');
         onProgress('claims');
+        await new Promise(resolve => setTimeout(resolve, 100)); // Ensure event is processed
+        
         const { claims, finalSummaryResponse } = await processTranscript(transcript);
         
         console.log('Starting claim verification...');
         onProgress('verification');
+        await new Promise(resolve => setTimeout(resolve, 100)); // Ensure event is processed
+        
         const verifiedClaims = await verifyClaims(claims);
 
         // If no claims were found or verified, save empty report and return
@@ -34,6 +42,8 @@ async function generateFinalReport(transcript, { onProgress }) {
 
         console.log('Starting source finding...');
         onProgress('sources');
+        await new Promise(resolve => setTimeout(resolve, 100)); // Ensure event is processed
+        
         let processedClaims = await Promise.all(
             claims.split('\n')
                 .filter(claim => claim.trim() && claim.includes(':'))
