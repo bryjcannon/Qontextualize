@@ -73,6 +73,12 @@ We are committed to providing a welcoming and inclusive environment. All contrib
 - Organize properties consistently
 - Use flexbox/grid for layouts
 
+### Environment Setup
+
+1. Copy `.env.example` to `.env`
+2. Fill in your API keys and other configuration values
+3. Never commit the `.env` file to version control
+
 ## Testing - some potential steps
 
 - Write unit tests for new features
