@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Qontext",
+  "name": "Qontextualize",
   "version": "1.0.0",
   "description": "YouTube transcript claim analyzer",
   "icons": {
