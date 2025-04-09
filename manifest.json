@@ -16,8 +16,6 @@
   ],
   "host_permissions": [
     "https://www.youtube.com/watch?v=*",
-    "http://localhost:3000/*",
-    "https://www.googleapis.com/customsearch/*",
     "https://api.qontextualize.com/*"
   ],
   "action": {

@@ -122,6 +122,15 @@ function isAllowedDomain(domain) {
 }
 
 /**
+ * Check if a hostname is an internal IP
+ * @param {string} hostname - Hostname to check
+ * @returns {boolean} Whether the hostname is an internal IP
+ */
+function isInternalIP(hostname) {
+    return hostname.match(/^(?:127\.|169\.254\.|192\.168\.|10\.|172\.(?:1[6-9]|2[0-9]|3[01])\.).*$/) !== null;
+}
+
+/**
  * Validate and sanitize a URL
  * @param {string} url - URL to validate
  * @param {Object} options - Validation options
@@ -145,10 +154,10 @@ export function sanitizeUrl(url, options = {}) {
             return null;
         }
 
-        // Prevent localhost/internal IPs
+        // Block all internal URLs and IPs
         if (parsed.hostname === 'localhost' || 
-            parsed.hostname.match(/^(?:127\.|169\.254\.|192\.168\.|10\.|172\.(?:1[6-9]|2[0-9]|3[01])\.).*/)) {
-            console.warn(`Rejected internal/localhost URL: ${url}`);
+            isInternalIP(parsed.hostname)) {
+            console.warn(`Rejected internal URL: ${url}`);
             return null;
         }
 

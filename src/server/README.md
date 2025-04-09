@@ -9,10 +9,11 @@ This is the proxy server for the Qontext Chrome extension that handles OpenAI AP
 npm install
 ```
 
-2. Create a `.env` file in the server directory with your OpenAI API key:
+2. Create a `.env` file in the server directory with your OpenAI API key and other environment variables:
 ```
 OPENAI_API_KEY=your_api_key_here
 PORT=3000
+HOST=localhost
 ```
 
 3. Start the server:
@@ -24,6 +25,11 @@ For development with auto-reload:
 ```bash
 npm run dev
 ```
+
+## Environment Variables Required:
+- PORT - The port number for the server to listen on
+- HOST - The host address to bind to
+- OPENAI_API_KEY - Your OpenAI API key
 
 ## Security Features
 

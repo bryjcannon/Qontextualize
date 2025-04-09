@@ -20,7 +20,7 @@ const rateLimitRequests = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100; 
 // Parse CORS origins
 const corsOrigins = process.env.CORS_ORIGIN ? 
     process.env.CORS_ORIGIN.split(',').map(origin => origin.trim()) :
-    ['http://localhost:3000'];
+    ['https://api.qontextualize.com'];
 
 /**
  * Validate and sanitize environment variables
