@@ -5,7 +5,8 @@ node_modules/
 .env
 
 # Data directory
-data/
+data/*
+!data/settings.json
 
 # IDE and editor files
 .vscode/
@@ -15,6 +16,7 @@ data/
 *~
 
 # Logs
+logs/
 *.log
 npm-debug.log*
 

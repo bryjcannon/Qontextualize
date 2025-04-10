@@ -1,7 +1,29 @@
-import config from './config.browser.js';
+import config from './src/config/config.browser.js';
 
-function formatTimestamps(timestamps) {
-    return timestamps.map(ts => `<span class="timestamp">${ts}</span>`).join('');
+// Add at the top with other functions
+function updateProgress(step) {
+    console.log('Updating progress:', step);
+    const steps = ['transcript', 'claims', 'verification', 'sources', 'report'];
+    const stepIndex = steps.indexOf(step);
+    const progress = ((stepIndex + 1) / steps.length) * 100;
+    
+    // Update progress bar fill
+    const progressFill = document.querySelector('.progress-fill');
+    if (progressFill) {
+        console.log('Setting progress width to:', `${progress}%`);
+        progressFill.style.width = `${progress}%`;
+    } else {
+        console.error('Progress fill element not found');
+    }
+    
+    // Update step indicators
+    const progressSteps = document.querySelectorAll('.progress-step');
+    progressSteps.forEach((stepEl, index) => {
+        if (index <= stepIndex) {
+            stepEl.classList.add('completed');
+            console.log('Marking step completed:', steps[index]);
+        }
+    });
 }
 
 function formatSources(sources) {
@@ -9,12 +31,12 @@ function formatSources(sources) {
     
     if (!sources || !Array.isArray(sources)) {
         console.log('⚠️ Invalid sources data:', sources);
-        return 'No sources available';
+        return null;
     }
     
     try {
         const validSources = sources.filter(source => {
-            const isValid = source && source.url;
+            const isValid = source && source.url && source.title;
             if (!isValid) {
                 console.log('❗ Filtered out invalid source:', source);
             }
@@ -23,102 +45,310 @@ function formatSources(sources) {
         
         console.log(`📋 Valid sources: ${validSources.length} of ${sources.length}`);
         
-        const formattedSources = validSources.map(source => {
-            console.log('📕 Processing source:', source);
-            const domain = source.domain || new URL(source.url).hostname;
-            const displayText = source.title || `${domain} Source`;
-            const link = `<a href="${source.url}" target="_blank" class="source-link ${domain.split('.')[0]}">
-                ${displayText}
-                <span class="source-domain">(${domain})</span>
-            </a>`;
-            console.log('🔗 Generated link:', link);
-            return link;
+        if (validSources.length === 0) {
+            return null;
+        }
+
+        const sourcesContainer = document.createElement('div');
+        sourcesContainer.className = 'sources-section';
+        
+        // Sources list
+        validSources.forEach(source => {
+            const sourceItem = document.createElement('div');
+            sourceItem.className = 'source-item';
+
+            // Title and content container
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'source-content';
+
+            // Title with link
+            const titleLink = document.createElement('a');
+            titleLink.href = source.url;
+            titleLink.target = '_blank';
+            titleLink.className = 'source-title';
+            titleLink.textContent = source.title;
+            contentDiv.appendChild(titleLink);
+
+            // Metadata section
+            const metaDiv = document.createElement('div');
+            metaDiv.className = 'source-meta';
+
+            // First row: Authors, Journal, Peer Review
+            const topRow = document.createElement('div');
+            topRow.className = 'source-meta-row';
+
+            // Authors
+            if (source.authors) {
+                const authorSpan = document.createElement('span');
+                authorSpan.className = 'source-meta-item';
+                authorSpan.innerHTML = `👤 ${source.authors}`;
+                topRow.appendChild(authorSpan);
+
+                const separator = document.createElement('span');
+                separator.className = 'separator';
+                separator.textContent = '•';
+                topRow.appendChild(separator);
+            }
+
+            // Journal with peer review badge
+            if (source.journal) {
+                const journalSpan = document.createElement('span');
+                journalSpan.className = 'source-meta-item';
+                journalSpan.innerHTML = `📰 ${source.journal}`;
+                topRow.appendChild(journalSpan);
+                
+                if (source.peerReviewed) {
+                    const separator = document.createElement('span');
+                    separator.className = 'separator';
+                    separator.textContent = '•';
+                    topRow.appendChild(separator);
+
+                    const peerReviewSpan = document.createElement('span');
+                    peerReviewSpan.className = 'source-meta-item';
+                    const iconSpan = document.createElement('span');
+                    iconSpan.className = source.peerReviewed ? 'peer-reviewed-true' : 'peer-reviewed-false';
+                    iconSpan.textContent = '☎';
+                    peerReviewSpan.appendChild(iconSpan);
+                    peerReviewSpan.appendChild(document.createTextNode(' Peer Reviewed'));
+                    topRow.appendChild(peerReviewSpan);
+                }
+            }
+
+            metaDiv.appendChild(topRow);
+
+            // Second row: Year and Citations
+            if (source.year || source.citations) {
+                const bottomRow = document.createElement('div');
+                bottomRow.className = 'source-meta-row';
+
+                // Year
+                if (source.year) {
+                    const yearSpan = document.createElement('span');
+                    yearSpan.className = 'source-meta-item';
+                    yearSpan.innerHTML = `📅 ${source.year}`;
+                    bottomRow.appendChild(yearSpan);
+
+                    if (source.citations) {
+                        const separator = document.createElement('span');
+                        separator.className = 'separator';
+                        separator.textContent = '•';
+                        bottomRow.appendChild(separator);
+                    }
+                }
+
+                // Citations
+                if (source.citations) {
+                    const citationsSpan = document.createElement('span');
+                    citationsSpan.className = 'source-meta-item';
+                    citationsSpan.innerHTML = `📊 ${source.citations} citations`;
+                    bottomRow.appendChild(citationsSpan);
+                }
+
+                metaDiv.appendChild(bottomRow);
+            }
+
+            contentDiv.appendChild(metaDiv);
+
+            // Summary text
+            if (source.summary) {
+                const summaryText = document.createElement('div');
+                summaryText.className = 'source-text';
+                summaryText.textContent = source.summary;
+                contentDiv.appendChild(summaryText);
+            }
+
+            sourceItem.appendChild(contentDiv);
+
+            // Stance indicator at bottom
+            if (source.stance) {
+                const stanceIcon = {
+                    'Support': '✅',
+                    'Oppose': '❌',
+                    'Neutral': '⚖️'
+                }[source.stance] || '•';
+                
+                const stanceText = document.createElement('div');
+                stanceText.className = 'source-stance';
+                stanceText.setAttribute('data-stance', source.stance);
+                stanceText.innerHTML = `<strong>${stanceIcon} ${source.stance}</strong>`;
+                sourceItem.appendChild(stanceText);
+            }
+
+            sourcesContainer.appendChild(sourceItem);
         });
 
-        const result = formattedSources.join('\n') || 'No sources available';
-        console.log('🌟 Final formatted sources:', result);
-        return result;
+        return sourcesContainer;
     } catch (error) {
         console.error('❌ Error formatting sources:', error);
         console.log('📝 Raw sources data:', JSON.stringify(sources, null, 2));
-        return 'Error displaying sources';
+        return null;
     }
 }
 
 function displayAnalysis(analysis) {
+    if (!analysis) {
+        console.error('❌ No analysis data provided');
+        return;
+    }
+
     // Display video title
     const videoTitle = document.getElementById('video-title');
     videoTitle.textContent = `Analysis of Strong Claims in ${analysis.videoTitle || 'Video'}`;
 
     // Display video summary
     const videoSummary = document.getElementById('video-summary');
-    videoSummary.textContent = analysis.summary;
+    videoSummary.textContent = analysis.summary || 'No summary available';
 
     // Clear and prepare analysis content
     const analysisContent = document.getElementById('analysis-content');
     analysisContent.innerHTML = '';
+
+    if (!analysis.claims || !Array.isArray(analysis.claims) || analysis.claims.length === 0) {
+        analysisContent.innerHTML = '<div class="claim-section">No claims to analyze</div>';
+        return;
+    }
 
     // Display claims
     analysis.claims.forEach((claim, index) => {
         const claimSection = document.createElement('div');
         claimSection.className = 'claim-section';
 
+        // Claim title
         const claimTitle = document.createElement('h3');
-        claimTitle.textContent = `Claim ${index + 1}: ${claim.title}`;
-
-        const claimSummary = document.createElement('div');
-        claimSummary.className = 'claim-text';
-        claimSummary.innerHTML = `<strong>Summary of Claim:</strong> ${claim.summary}`;
-
-        const timestamps = document.createElement('div');
-        timestamps.className = 'claim-text';
-        timestamps.innerHTML = `<strong>Timestamp:</strong> ${formatTimestamps(claim.timestamps)}`;
-
-        const sources = document.createElement('div');
-        sources.className = 'claim-text';
-        sources.innerHTML = `<strong>Sources:</strong><div class="source-list">${formatSources(claim.sources)}</div>`;
-
-        const consensus = document.createElement('div');
-        consensus.className = 'claim-text';
-        consensus.innerHTML = `<strong>Scientific Consensus:</strong> ${claim.consensus}`;
-
-        const assessment = document.createElement('div');
-        assessment.className = 'claim-text';
-        assessment.innerHTML = `<strong>Assessment:</strong> ${claim.assessment}`;
-
+        claimTitle.className = 'claim-title';
+        const titleText = typeof claim === 'object' ? 
+            (claim.title || claim.topic || claim.claim || `Claim ${index + 1}`) :
+            claim;
+        claimTitle.textContent = `Claim ${index + 1}: ${titleText.replace(/^\d+\.\s*/, '')}`;
         claimSection.appendChild(claimTitle);
-        claimSection.appendChild(claimSummary);
-        claimSection.appendChild(timestamps);
-        claimSection.appendChild(consensus);
-        claimSection.appendChild(assessment);
-        claimSection.appendChild(sources);
 
+        const claimContent = document.createElement('div');
+        claimContent.className = 'claim-content';
+
+        // Summary
+        if (claim.summary || titleText) {
+            const summary = document.createElement('div');
+            summary.className = 'claim-item';
+            summary.innerHTML = `<strong>Summary:</strong> ${claim.summary || titleText}`;
+            claimContent.appendChild(summary);
+        }
+
+        // Consensus with icon
+        if (claim.consensus) {
+            const consensus = document.createElement('div');
+            consensus.className = 'claim-item';
+            consensus.innerHTML = `<strong>🔍 Scientific Consensus:</strong> ${claim.consensus}`;
+            claimContent.appendChild(consensus);
+        }
+
+        // Assessment with icon
+        if (claim.assessment) {
+            const assessment = document.createElement('div');
+            assessment.className = 'claim-item';
+            const color = claim.color || 'inherit';
+            assessment.innerHTML = `<strong>📊 Assessment:</strong> <span style="color: ${color}">${claim.assessment}</span>`;
+            claimContent.appendChild(assessment);
+        }
+
+        // Sources Section
+        if (claim.sources && Array.isArray(claim.sources)) {
+            const sourcesElement = formatSources(claim.sources);
+            if (sourcesElement) {
+                // Create toggle button
+                const toggleButton = document.createElement('button');
+                toggleButton.className = 'sources-toggle';
+                toggleButton.textContent = 'Sources';
+                toggleButton.onclick = function() {
+                    this.classList.toggle('expanded');
+                    sourcesElement.classList.toggle('expanded');
+                };
+                claimContent.appendChild(toggleButton);
+                claimContent.appendChild(sourcesElement);
+            }
+        }
+
+        // Claim Status with icon
+        if (claim.agreementStatus) {
+            const agreement = document.createElement('div');
+            agreement.className = 'claim-item';
+            const color = claim.color || 'inherit';
+            const icon = {
+                'Support': '✅',
+                'Oppose': '❌',
+                'Neutral': '⚖️'
+            }[claim.agreementStatus] || '•';
+            agreement.innerHTML = `<strong>${icon} Claim Status:</strong> <span style="color: ${color}">${claim.agreementStatus}</span>`;
+            claimContent.appendChild(agreement);
+        }
+
+        claimSection.appendChild(claimContent);
         analysisContent.appendChild(claimSection);
     });
 }
-
 
 async function analyzeTranscript(transcriptData, analysisKey) {
     try {
         const clientStartTime = Date.now();
         
+        // Show loading screen
+        const loadingScreen = document.getElementById('loading-screen');
+        loadingScreen.style.display = 'flex';
+        
+        // Get settings from storage
+        const { fullReportEnabled } = await chrome.storage.local.get('fullReportEnabled');
+        const { saveLocalData } = await chrome.storage.sync.get('settings');
+        
+        // Update progress for transcript extraction
+        updateProgress('transcript');
+        
+        // Set up server-sent events before making the API call
+        const progressEndpoint = config.PROXY_API_ENDPOINT.replace('/api/analyze', '/api/analyze/progress');
+        const eventSource = new EventSource(progressEndpoint);
+        
+        eventSource.onopen = () => {
+            console.log('SSE connection opened to:', progressEndpoint);
+        };
+        
+        eventSource.onmessage = (event) => {
+            console.log('Progress event received:', event.data);
+            try {
+                const data = JSON.parse(event.data);
+                if (data.step) {
+                    updateProgress(data.step);
+                }
+            } catch (e) {
+                console.error('Error parsing progress data:', e);
+            }
+        };
+
+        eventSource.onerror = (error) => {
+            console.error('SSE error:', error);
+            eventSource.close();
+        };
+        
         // Call server API to analyze transcript
         const response = await fetch(config.PROXY_API_ENDPOINT, {
             method: 'POST',
+            mode: 'cors',
+            credentials: 'omit',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 transcript: transcriptData.fullText,
-                clientStartTime
+                clientStartTime,
+                fullReport: fullReportEnabled,
+                saveLocalData: saveLocalData?.saveLocalData ?? false
             })
         });
 
         if (!response.ok) {
-            throw new Error(`Server error: ${response.status}`);
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const analysis = await response.json();
+        eventSource.close();
+        console.log('SSE connection closed');
 
         // Store analysis
         await chrome.storage.local.set({
@@ -128,14 +358,33 @@ async function analyzeTranscript(transcriptData, analysisKey) {
             }
         });
 
+        // Ensure progress bar completes
+        updateProgress('report');
+
+        // Hide loading screen with fade out
+        loadingScreen.style.opacity = '0';
+        loadingScreen.style.transition = 'opacity 0.5s ease-out';
+        
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+            loadingScreen.style.opacity = '1';
+        }, 500);
+
         return analysis;
     } catch (error) {
         console.error('Error analyzing transcript:', error);
+        
+        // Hide loading screen on error
+        const loadingScreen = document.getElementById('loading-screen');
+        loadingScreen.style.display = 'none';
+        
         throw error;
     }
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
+    // Add loading class to body
+    document.body.classList.add('loading');
     // Get transcript data from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const transcriptKey = urlParams.get('transcriptKey');
@@ -160,15 +409,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (!transcriptData) {
             throw new Error('Transcript not found');
         }
+        
+
 
         // Update analysis section
         const analysisContent = document.getElementById('analysis-content');
         
         if (!analysisData) {
             // Generate new analysis
-            analysisContent.innerHTML = '<p>Analyzing scientific claims...</p>';
+
+            
             try {
                 const analysis = await analyzeTranscript(transcriptData, analysisKey);
+                
+
                 displayAnalysis(analysis);
             } catch (error) {
                 analysisContent.innerHTML = `<p>Error analyzing transcript: ${error.message}</p>`;
@@ -181,9 +435,26 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Update title
         document.getElementById('video-title').textContent = `Analysis of Strong Claims in ${transcriptData.videoTitle}`;
         
+        // Hide loading screen with fade out
+        const loadingScreen = document.getElementById('loading-screen');
+        loadingScreen.classList.add('hidden');
+        document.body.classList.remove('loading');
+        
+        // Remove loading screen after fade out
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+        }, 500);
 
     } catch (error) {
         document.getElementById('video-title').textContent = `Error: ${error.message}`;
         document.getElementById('analysis-content').innerHTML = '<p>Failed to load content</p>';
+        
+        // Hide loading screen on error
+        const loadingScreen = document.getElementById('loading-screen');
+        loadingScreen.classList.add('hidden');
+        document.body.classList.remove('loading');
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+        }, 500);
     }
 });

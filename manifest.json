@@ -1,25 +1,27 @@
 {
   "manifest_version": 3,
   "name": "Qontextualize",
-  "version": "1.0",
-  "description": "A Chrome extension that works only on YouTube videos.",
+  "version": "1.0.0",
+  "description": "YouTube transcript claim analyzer",
   "icons": {
     "16": "icons/icon16.png",
-    "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
   "host_permissions": [
     "https://www.youtube.com/watch?v=*",
-    "http://localhost:3000/*",
-    "https://www.googleapis.com/customsearch/*"
+    "https://api.qontextualize.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
-      "32": "icons/icon32.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Example Report - Qontextualize</title>
+    <style>
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #363636;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --accent-blue: #3498db;
+            --accent-green: #2ecc71;
+            --accent-red: #e74c3c;
+            --accent-yellow: #f1c40f;
+            --border-color: #404040;
+            --neon-green: #19cc5f;
+            --title-purple: #7a3fcb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        #video-title {
+            color: #e0e0e0;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px #7a3fcb;
+        }
+
+        .section-divider {
+            height: 2px;
+            background: var(--neon-green);
+            margin: 30px 0;
+            border: none;
+            box-shadow: 0 0 5px var(--neon-green);
+        }
+
+        .section-header {
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            font-size: 24px;
+        }
+
+        .summary-section {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .claim-item {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .claim-text {
+            font-size: 16px;
+            margin-bottom: 16px;
+        }
+
+        .claim-evaluation {
+            background: var(--bg-tertiary);
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        .claim-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .status-supported {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+        }
+
+        .status-disputed {
+            background: var(--accent-yellow);
+            color: var(--bg-primary);
+        }
+
+        .status-unsupported {
+            background: var(--accent-red);
+            color: var(--bg-primary);
+        }
+
+        .source-list {
+            margin-top: 15px;
+            padding-left: 0;
+        }
+
+        .source-item {
+            list-style: none;
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .source-title {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .source-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="video-title">Analysis of "The Science of Exercise and Brain Health"</h1>
+
+    <hr class="section-divider">
+
+    <h2 class="section-header">Summary of the Video</h2>
+    <div class="summary-section">
+        This video explores the relationship between physical exercise and cognitive function, discussing various studies and their implications for brain health. The presenter examines both aerobic and resistance training effects on memory, focus, and overall cognitive performance.
+    </div>
+
+    <hr class="section-divider">
+
+    <h2 class="section-header">Strong Claims and Their Evaluation</h2>
+    <div class="claims-intro">
+        Below are key claims made in the video, along with an assessment of their validity based on scientific consensus.
+    </div>
+
+    <div class="claim-item">
+        <div class="claim-text">
+            "Regular aerobic exercise increases hippocampal volume and improves memory performance in older adults."
+        </div>
+        <div class="claim-evaluation">
+            <span class="claim-status status-supported">✓ Supported by Evidence</span>
+            <p>Multiple longitudinal studies and meta-analyses confirm this relationship. The evidence is particularly strong for adults over 60 years of age.</p>
+            <ul class="source-list">
+                <li class="source-item">
+                    <a href="#" class="source-title">Exercise training increases size of hippocampus and improves memory</a>
+                    <div class="source-meta">PNAS Journal (2011) • 1,200+ citations • Peer Reviewed</div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="claim-item">
+        <div class="claim-text">
+            "A single session of high-intensity exercise can immediately boost cognitive performance by 50%."
+        </div>
+        <div class="claim-evaluation">
+            <span class="claim-status status-disputed">⚠ Partially Supported</span>
+            <p>While acute exercise can improve cognitive performance, the stated magnitude (50%) is not supported by current research. Most studies show more modest improvements of 5-15%.</p>
+            <ul class="source-list">
+                <li class="source-item">
+                    <a href="#" class="source-title">Acute Exercise and Cognitive Performance: A Meta-Analysis</a>
+                    <div class="source-meta">Brain Research (2019) • 85 citations • Peer Reviewed</div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="claim-item">
+        <div class="claim-text">
+            "Exercise is more effective than brain training games for preventing cognitive decline."
+        </div>
+        <div class="claim-evaluation">
+            <span class="claim-status status-supported">✓ Supported by Evidence</span>
+            <p>Comparative studies consistently show that physical exercise has broader and more substantial benefits for cognitive health compared to computerized brain training programs.</p>
+            <ul class="source-list">
+                <li class="source-item">
+                    <a href="#" class="source-title">Comparative Effects of Physical Exercise and Cognitive Training on Cognition</a>
+                    <div class="source-meta">Nature Neuroscience (2020) • 324 citations • Peer Reviewed</div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

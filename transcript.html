@@ -1,186 +1,590 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Transcript Viewer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" src="openai-service.js"></script>
+    <title>Video Analysis</title>
     <style>
-        body {
-            font-family: 'Montserrat', sans-serif;
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 20px;
-            background-color: #1a1a1a;
-            color: #ffffff;
-            line-height: 1.6;
-        }
-        .logo {
-            display: none; /* Hide the logo as per reference design */
-        }
-        .header {
-            margin-bottom: 40px;
-        }
-        .analysis-container {
-            background-color: transparent;
-            margin-bottom: 40px;
+        @keyframes gradientShift {
+            0% { color: #9c27b0; } /* Purple */
+            50% { color: #4CAF50; } /* Green */
+            100% { color: #9c27b0; } /* Back to purple */
         }
 
-        .claim-section {
-            border-bottom: 1px solid #333;
-            padding: 30px 0;
+        @keyframes dots {
+            0% { content: '.'; }
+            33% { content: '..'; }
+            66% { content: '...'; }
+            100% { content: '.'; }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
             margin-bottom: 30px;
         }
 
-        .claim-section:last-child {
-            border-bottom: none;
+        .loading-q {
+            width: 128px;
+            height: 128px;
+            animation: pulse 2s infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            filter: drop-shadow(0 0 10px #19cc5f);
         }
 
-        .claim-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
+        .loading-q img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
-        .confidence {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 14px;
+        /* Hide loading screen when content is ready */
+        body:not(.loading) .loading-screen {
+            display: none;
+        }
+        
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #363636;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --accent-blue: #3498db;
+            --accent-green: #2ecc71;
+            --accent-red: #e74c3c;
+            --accent-yellow: #f1c40f;
+            --border-color: #404040;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        h1 {
+            color: #ffffff;
+            margin-bottom: 30px;
+            font-size: 42px;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        h2 {
+            color: #ffffff;
+            font-size: 32px;
+            margin: 40px 0 20px;
             font-weight: 500;
         }
 
-        .confidence.high {
-            background-color: #1a472a;
-            color: #2ecc71;
-        }
-
-        .confidence.medium {
-            background-color: #7d5d1a;
-            color: #f1c40f;
-        }
-
-        .confidence.low {
-            background-color: #641e16;
-            color: #e74c3c;
-        }
-
-        .timestamp {
-            color: #666;
-            font-family: monospace;
-            font-size: 14px;
-            margin-right: 10px;
-        }
-
-        .sources {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #333;
-        }
-
-        .source-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-top: 8px;
-            padding-left: 20px;
-        }
-
-        .source-link {
-            color: #3498db;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            background: rgba(52, 152, 219, 0.1);
-            transition: all 0.2s ease;
-            font-size: 14px;
-        }
-
-        .source-link:hover {
-            background: rgba(52, 152, 219, 0.2);
-        }
-
-        .source-domain {
-            color: #666;
-            font-size: 0.9em;
-        }
-
-        .source-link.ncbi {
-            color: #2ecc71;
-            background: rgba(46, 204, 113, 0.1);
-        }
-
-        .source-link.ncbi:hover {
-            background: rgba(46, 204, 113, 0.2);
-        }
-
-        .source-link.cdc {
-            color: #e74c3c;
-            background: rgba(231, 76, 60, 0.1);
-        }
-
-        .source-link.cdc:hover {
-            background: rgba(231, 76, 60, 0.2);
-        }
-
-        .source-link.who {
-            color: #f1c40f;
-            background: rgba(241, 196, 15, 0.1);
-        }
-
-        .source-link.who:hover {
-            background: rgba(241, 196, 15, 0.2);
-        }
-
-        .source-link.nejm {
-            color: #9b59b6;
-            background: rgba(155, 89, 182, 0.1);
-        }
-
-        .source-link.nejm:hover {
-            background: rgba(155, 89, 182, 0.2);
-        }
-        
-        .analysis-text {
-            font-size: 16px;
-            line-height: 1.8;
+        .summary-section {
+            margin: 30px 0;
+            font-size: 18px;
+            line-height: 1.6;
             color: #e0e0e0;
         }
 
-        h3 {
-            color: #ffffff;
-            margin: 0 0 20px 0;
+        .claims-intro {
+            margin: 30px 0;
+            font-size: 18px;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+
+        .claim-title {
             font-size: 24px;
+            color: #ffffff;
+            margin: 40px 0 20px;
+            font-weight: 500;
+            text-shadow: 0 0 10px #7a3fcb;
+        }
+
+        .claim-content {
+            margin-left: 25px;
+        }
+
+        .claim-item {
+            margin: 15px 0;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        .claim-item strong {
+            color: #ffffff;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        /* Source styling */
+        .sources-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .source-item {
+            margin: 15px 0;
+            padding: 15px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s ease;
+        }
+
+        .source-item:hover {
+            transform: translateX(5px);
+        }
+
+        .source-title {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+
+        .source-title:hover {
+            text-decoration: underline;
+        }
+
+        .source-meta {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 8px 0;
+        }
+
+        .source-summary {
+            margin: 12px 0;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+
+        .source-stance {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+
+        .stance-agrees {
+            background: rgba(46, 204, 113, 0.2);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+
+        .stance-disagrees {
+            background: rgba(231, 76, 60, 0.2);
+            color: var(--accent-red);
+            border: 1px solid var(--accent-red);
+        }
+
+        .stance-neutral {
+            background: rgba(241, 196, 15, 0.2);
+            color: var(--accent-yellow);
+            border: 1px solid var(--accent-yellow);
+        }
+
+        .sources-toggle {
+            display: inline-flex;
+            align-items: center;
+            background: #f3f3f3;
+            border: 1px solid #d1d1d1;
+            border-radius: 3px;
+            padding: 3px 8px;
+            margin: 8px 0;
+            font-size: 15px;
+            color: #4a4a4a;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .sources-toggle:hover {
+            background: #ebebeb;
+        }
+
+        .sources-toggle::before {
+            content:  '\25B6';
+            font-size: 9px;
+            color: #4a4a4a;
+            margin-right: 4px;
+            position: relative;
+            top: -1px;
+            transition: transform 0.15s ease;
+        }
+
+        .sources-toggle.expanded::before {
+            transform: rotate(90deg);
+        }
+
+        .sources-section {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .sources-section.expanded {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .source-item {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .source-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .source-meta {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin: 4px 0 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+
+
+        .peer-reviewed-true {
+            color: var(--accent-green);
+        }
+
+        .peer-reviewed-false {
+            color: var(--text-secondary);
+        }
+
+        .source-meta-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .source-meta-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .source-meta .separator {
+            color: var(--text-secondary);
+            opacity: 0.4;
+            margin: 0 4px;
+            position: relative;
+            top: -1px;
+        }
+
+
+
+        .source-title {
+            font-size: 18px;
+            margin-bottom: 2px;
+        }
+
+        .source-text {
+            font-size: 12px;
+            line-height: 1.4;
+            margin-top: 8px;
+            color: var(--text-secondary);
+        }
+
+        .source-text {
+            color: var(--text-secondary);
+            font-size: 15px;
+            line-height: 1.5;
+            margin-top: 12px;
+        }
+
+        .source-stance {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            display: inline-block;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--accent-yellow);
+            margin-top: auto;
+            align-self: flex-start;
+        }
+
+        .source-stance[data-stance='Support'] {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .source-stance[data-stance='Oppose'] {
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        .source-stance[data-stance='Neutral'] {
+            border-color: var(--accent-yellow);
+            color: var(--accent-yellow);
+        }
+
+        .source-stance strong {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .source-summary-text {
+            margin-top: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .source-stats {
+            margin: 15px 0;
+            padding: 15px;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .source-stats ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 10px 0;
+            color: var(--text-secondary);
+        }
+
+        .source-stats li {
+            margin: 8px 0;
+        }
+
+        .peer-reviewed-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            background: rgba(46, 204, 113, 0.2);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 32px;
+            }
+
+            h2 {
+                font-size: 24px;
+            }
+
+            .claim-title {
+                font-size: 20px;
+            }
+
+            .source-item {
+                padding: 12px;
+            }
+
+            .source-title {
+                font-size: 16px;
+            }
+        }
+
+        .section-divider {
+            height: 2px;
+            background: #19cc5f; /* Neon-ish green */
+            margin: 30px 0;
+            border: none;
+            box-shadow: 0 0 5px #19cc5f;
+        }
+
+        #video-title {
+            color: #e0e0e0;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px #7a3fcb;
+        }
+
+        .section-header {
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+
+        .progress-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            width: 600px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: var(--bg-tertiary);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0;
+            background-color: #19cc5f;
+            transition: width 0.5s ease-in-out;
+            box-shadow: 0 0 10px #19cc5f;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            padding: 0 10px;
+            position: relative;
+        }
+
+        .progress-step {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+            position: relative;
+            flex: 1;
+        }
+
+        .progress-step.completed {
+            color: #19cc5f;
             font-weight: 500;
         }
 
-        h2 {
-            color: #ffffff;
-            margin: 0 0 40px 0;
-            font-size: 24px;
-            font-weight: 500;
+        .progress-step::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 50%;
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
         }
-        
-        h2 {
-            color: #dc91e4;
-            margin-top: 0;
-            margin-bottom: 20px;
-            font-size: 24px;
+
+        .progress-step.completed::before {
+            background: #19cc5f;
+            box-shadow: 0 0 5px #19cc5f;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                filter: drop-shadow(0 0 10px #19cc5f);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                filter: drop-shadow(0 0 15px #19cc5f);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                filter: drop-shadow(0 0 10px #19cc5f);
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1 id="video-title">Loading transcript...</h1>
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-q">
+                <img src="icons/icon512.png" alt="Loading icon">
+            </div>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <div class="progress-steps">
+                <div class="progress-step" data-step="transcript">Transcript</div>
+                <div class="progress-step" data-step="claims">Claims</div>
+                <div class="progress-step" data-step="verification">Verification</div>
+                <div class="progress-step" data-step="sources">Sources</div>
+                <div class="progress-step" data-step="report">Report</div>
+            </div>
+        </div>
     </div>
-    <div id="video-summary" class="video-summary">
+    <h1 id="video-title">
+        Loading video title...
+    </h1>
+
+    <hr class="section-divider">
+
+    <h2 class="section-header">Summary of the Video</h2>
+    <div id="video-summary" class="summary-section">
         Loading video summary...
     </div>
-    <h2>Strong Claims and Their Evaluation</h2>
+
+    <hr class="section-divider">
+
+    <h2 class="section-header">Strong Claims and Their Evaluation</h2>
+    <div class="claims-intro">
+        Below are key claims made in the conversation, along with an assessment of their validity based on scientific consensus.
+    </div>
+    
     <div id="analysis-content">
-        <p>Analyzing claims...</p>
+        Loading analysis...
     </div>
 
     <script type="module" src="transcript.js"></script>

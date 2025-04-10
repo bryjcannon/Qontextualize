@@ -27,29 +27,31 @@ body {
     background-color: #0052cc;
 }
 
-#download-btn {
-    width: 40px;
-    height: 40px;
-    font-size: 11px;
+.setting-button {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px 12px;
     background-color: #0066ff;
     color: white;
     border: none;
     border-radius: 4px;
+    font-size: 14px;
     cursor: pointer;
     transition: background-color 0.3s ease;
-    padding: 5px;
-    line-height: 1;
-    word-wrap: break-word;
 }
 
-#download-btn:hover {
+.setting-button:hover {
     background-color: #0052cc;
 }
 
-#download-btn:disabled {
+.setting-button:disabled {
     background-color: #cccccc;
     cursor: not-allowed;
+    opacity: 0.7;
 }
+
+
 
 #qontextualize-btn.clicked {
     background-color: #00cc66;
@@ -68,4 +70,91 @@ body {
 
 .status-text.error {
     color: #ff3333;
+}
+
+/* Settings styles */
+.divider {
+    margin: 20px 0;
+    border: none;
+    border-top: 1px solid #ddd;
+}
+
+.settings-section {
+    margin-top: 20px;
+    text-align: left;
+}
+
+.settings-header {
+    width: 100%;
+    padding: 10px;
+    background: none;
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.settings-header:hover {
+    background-color: #f5f5f5;
+}
+
+.settings-header h3 {
+    margin: 0;
+    font-size: 12px;
+    color: #333;
+}
+
+.chevron {
+    font-size: 12px;
+    transition: transform 0.3s;
+}
+
+.chevron {
+    font-size: 10px;
+    transition: transform 0.3s;
+    display: inline-block;
+}
+
+.settings-header:not(.collapsed) .chevron {
+    transform: rotate(90deg);
+}
+
+.settings-content {
+    max-height: 500px;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+}
+
+.settings-content.collapsed {
+    max-height: 0;
+}
+
+.setting-item {
+    margin: 10px 0;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+.setting-label {
+    display: flex;
+    flex-direction: column;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.setting-help {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #666;
+    font-weight: normal;
+}
+
+.setting-toggle {
+    margin-top: 8px;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
 }
