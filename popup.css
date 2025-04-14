@@ -7,9 +7,8 @@ body {
 
 .button-container {
     display: flex;
-    align-items: center;
     justify-content: center;
-    gap: 10px;
+    margin: 20px 0;
 }
 
 #qontextualize-btn {
@@ -57,26 +56,12 @@ body {
     background-color: #00cc66;
 }
 
-.status-text {
-    margin-top: 10px;
-    font-size: 12px;
-    color: #666;
-    min-height: 15px;
-}
-
-.status-text.success {
-    color: #00cc66;
-}
-
-.status-text.error {
-    color: #ff3333;
-}
-
 /* Settings styles */
 .divider {
-    margin: 20px 0;
     border: none;
-    border-top: 1px solid #ddd;
+    height: 1px;
+    background-color: #ccc;
+    margin: 10px 0;
 }
 
 .settings-section {

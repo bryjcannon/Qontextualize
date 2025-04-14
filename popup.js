@@ -3,7 +3,6 @@ import settingsManager from './src/utils/settings-manager.js';
 document.addEventListener('DOMContentLoaded', async function() {
     const button = document.getElementById('qontextualize-btn');
     const downloadBtn = document.getElementById('download-btn');
-    const statusText = document.getElementById('status');
     const fullReportCheckbox = document.getElementById('full-report-checkbox');
     
     // Initially disable download button
@@ -40,14 +39,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     saveLocalDataCheckbox.addEventListener('change', async (event) => {
         try {
             await settingsManager.updateSetting('saveLocalData', event.target.checked);
-            statusText.textContent = 'Settings saved successfully!';
-            statusText.classList.remove('error');
-            statusText.classList.add('success');
         } catch (error) {
             console.error('Failed to save setting:', error);
-            statusText.textContent = 'Failed to save settings';
-            statusText.classList.remove('success');
-            statusText.classList.add('error');
             // Revert checkbox state
             event.target.checked = !event.target.checked;
         }
@@ -60,11 +53,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         .sort((a, b) => b[1].timestamp - a[1].timestamp);
 
     if (transcripts.length > 0) {
-        const [key, latestTranscript] = transcripts[0];
-        const { videoTitle, timestamp } = latestTranscript;
-        const date = new Date(timestamp).toLocaleTimeString();
-        statusText.textContent = `Last transcript: ${videoTitle} (${date})`;
-        statusText.classList.add('success');
         downloadBtn.disabled = false;
     }
 
@@ -73,11 +61,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (message.action === 'transcriptExtracted') {
             if (!message.success) {
                 button.style.backgroundColor = '#ff3333'; // Red for error
-                statusText.textContent = `Error: ${message.error}`;
-                statusText.classList.add('error');
             } else {
-                statusText.textContent = `Stored transcript: ${message.videoTitle}`;
-                statusText.classList.add('success');
                 downloadBtn.disabled = false;
 
                 // Open transcript viewer in new tab with both keys
@@ -107,8 +91,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     button.addEventListener('click', async function() {
         // Change button color to green
         button.classList.add('clicked');
-        statusText.textContent = 'Extracting transcript...';
-        statusText.classList.remove('success', 'error');
 
         try {
             // Get the active tab
@@ -125,8 +107,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         } catch (error) {
             console.error('Error:', error);
             button.style.backgroundColor = '#ff3333'; // Red for error
-            statusText.textContent = `Error: ${error.message}`;
-            statusText.classList.add('error');
             
             setTimeout(() => {
                 button.classList.remove('clicked');
@@ -164,14 +144,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             a.download = `${videoTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_transcript.txt`;
             a.click();
             URL.revokeObjectURL(url);
-
-            // Show success message
-            statusText.textContent = 'Transcript downloaded!';
-            statusText.classList.add('success');
         } catch (error) {
             console.error('Error downloading transcript:', error);
-            statusText.textContent = `Error: ${error.message}`;
-            statusText.classList.add('error');
         }
     });
 });
