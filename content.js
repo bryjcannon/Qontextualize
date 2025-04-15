@@ -2,7 +2,7 @@ console.log('Qontextualize extension loaded on YouTube video page');
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'extractTranscript') {
+    if (request.action === 'getTranscript') {
         extractTranscript();
     }
 });
@@ -68,17 +68,15 @@ async function extractTranscript() {
 
         // Send success message back to popup
         chrome.runtime.sendMessage({ 
-            action: 'transcriptExtracted', 
-            success: true,
-            videoTitle,
-            videoId,
+            action: 'openTranscript', 
             storageKey,
-            analysisKey
+            analysisKey,
+            success: true
         });
     } catch (error) {
         console.error('Error extracting transcript:', error);
         chrome.runtime.sendMessage({ 
-            action: 'transcriptExtracted', 
+            action: 'openTranscript', 
             success: false, 
             error: error.message 
         });

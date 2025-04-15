@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Qontextualize",
-  "version": "1.0.0",
-  "description": "YouTube transcript claim analyzer",
+  "version": "1.0",
+  "description": "Add context to YouTube videos with AI-powered transcript analysis",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",

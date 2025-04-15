@@ -1,5 +1,24 @@
 import config from './src/config/config.browser.js';
 
+// Function to cleanup server processes
+async function cleanupServerProcesses(transcriptKey, analysisKey) {
+    try {
+        await fetch('https://api.qontextualize.com/cleanup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                transcriptKey,
+                analysisKey
+            })
+        });
+        console.log('Server cleanup completed');
+    } catch (error) {
+        console.error('Error during server cleanup:', error);
+    }
+}
+
 // Add at the top with other functions
 function updateProgress(step) {
     console.log('Updating progress:', step);
@@ -409,8 +428,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (!transcriptData) {
             throw new Error('Transcript not found');
         }
-        
 
+        // Set up cleanup handlers
+        window.addEventListener('beforeunload', () => {
+            // Send cleanup request before page unloads
+            cleanupServerProcesses(transcriptKey, analysisKey);
+        });
+
+        window.addEventListener('unload', () => {
+            // Send cleanup request when page unloads
+            cleanupServerProcesses(transcriptKey, analysisKey);
+        });
 
         // Update analysis section
         const analysisContent = document.getElementById('analysis-content');

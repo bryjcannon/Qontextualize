@@ -12,7 +12,7 @@ body {
 }
 
 #qontextualize-btn {
-    background-color: #0066ff;
+    background-color: #9c27b0;
     color: white;
     padding: 10px 20px;
     border: none;
@@ -23,7 +23,12 @@ body {
 }
 
 #qontextualize-btn:hover {
-    background-color: #0052cc;
+    background-color: #7B1FA2;
+}
+
+#qontextualize-btn.processing {
+    background-color: #4CAF50;
+    cursor: wait;
 }
 
 .setting-button {
@@ -31,7 +36,7 @@ body {
     width: 100%;
     margin-top: 8px;
     padding: 8px 12px;
-    background-color: #0066ff;
+    background-color: #9c27b0;
     color: white;
     border: none;
     border-radius: 4px;
@@ -41,19 +46,13 @@ body {
 }
 
 .setting-button:hover {
-    background-color: #0052cc;
+    background-color: #7B1FA2;
 }
 
-.setting-button:disabled {
+.setting-button.processing {
     background-color: #cccccc;
-    cursor: not-allowed;
+    cursor: wait;
     opacity: 0.7;
-}
-
-
-
-#qontextualize-btn.clicked {
-    background-color: #00cc66;
 }
 
 /* Settings styles */
@@ -142,4 +141,8 @@ body {
     width: 16px;
     height: 16px;
     cursor: pointer;
+}
+
+#qontextualize-btn.clicked {
+    background-color: #4CAF50;
 }

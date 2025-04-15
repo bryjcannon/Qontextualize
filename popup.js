@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Initially disable download button
     downloadBtn.disabled = true;
-    
+
     // Initialize settings toggle
     const settingsToggle = document.getElementById('settings-toggle');
     const settingsContent = document.getElementById('settings-content');
@@ -45,36 +45,95 @@ document.addEventListener('DOMContentLoaded', async function() {
             event.target.checked = !event.target.checked;
         }
     });
-    
-    // Get list of all stored transcripts
-    const stored = await chrome.storage.local.get(null);
-    const transcripts = Object.entries(stored)
-        .filter(([key]) => key.startsWith('transcript_'))
-        .sort((a, b) => b[1].timestamp - a[1].timestamp);
 
-    if (transcripts.length > 0) {
-        downloadBtn.disabled = false;
-    }
+    // Handle button click
+    button.addEventListener('click', async function() {
+        // Don't process if already processing
+        if (button.classList.contains('processing')) {
+            return;
+        }
 
-    // Listen for messages from content script
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.action === 'transcriptExtracted') {
-            if (!message.success) {
-                button.style.backgroundColor = '#ff3333'; // Red for error
-            } else {
+        // Show processing state
+        button.classList.add('processing');
+        
+        try {
+            // Get current tab
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            
+            if (!tab.url || !tab.url.includes('youtube.com/watch')) {
+                alert('Please navigate to a YouTube video first.');
+                button.classList.remove('processing');
+                return;
+            }
+
+            // Execute content script
+            await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                files: ['content.js']
+            });
+
+            // Send message to content script
+            chrome.tabs.sendMessage(tab.id, { 
+                action: 'getTranscript', 
+                fullReport: fullReportCheckbox.checked 
+            });
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to process video. Please try again.');
+            button.classList.remove('processing');
+        }
+    });
+
+    // Handle messages from content script
+    chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+        if (message.action === 'openTranscript') {
+            if (message.success) {
+                // Enable download button
                 downloadBtn.disabled = false;
-
-                // Open transcript viewer in new tab with both keys
+                
+                // Open transcript viewer in new tab
                 const viewerURL = chrome.runtime.getURL('transcript.html') + 
                     `?transcriptKey=${message.storageKey}&analysisKey=${message.analysisKey}`;
                 chrome.tabs.create({ url: viewerURL });
+            } else {
+                alert(`Failed to get transcript: ${message.error}`);
             }
             
-            // Revert button color after 1 second
-            setTimeout(() => {
-                button.classList.remove('clicked');
-                button.style.backgroundColor = ''; // Reset to default blue
-            }, 1000);
+            // Remove processing state
+            button.classList.remove('processing');
+        }
+    });
+
+    // Handle download button
+    downloadBtn.addEventListener('click', async function() {
+        try {
+            // Get latest transcript
+            const stored = await chrome.storage.local.get(null);
+            const transcripts = Object.entries(stored)
+                .filter(([key]) => key.startsWith('transcript_'))
+                .sort((a, b) => b[1].timestamp - a[1].timestamp);
+
+            if (transcripts.length === 0) {
+                alert('No transcripts available to download.');
+                return;
+            }
+
+            // Get most recent transcript
+            const [key, data] = transcripts[0];
+            
+            // Create blob and download
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `transcript_${new Date().toISOString()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error downloading transcript:', error);
+            alert('Failed to download transcript.');
         }
     });
 
@@ -86,66 +145,5 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Load checkbox state from storage
     chrome.storage.local.get('fullReportEnabled', function(data) {
         fullReportCheckbox.checked = !!data.fullReportEnabled;
-    });
-
-    button.addEventListener('click', async function() {
-        // Change button color to green
-        button.classList.add('clicked');
-
-        try {
-            // Get the active tab
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            
-            // Inject and execute content script
-            await chrome.scripting.executeScript({
-                target: { tabId: tab.id },
-                files: ['content.js']
-            });
-
-            // Send message to content script to extract transcript
-            chrome.tabs.sendMessage(tab.id, { action: 'extractTranscript' });
-        } catch (error) {
-            console.error('Error:', error);
-            button.style.backgroundColor = '#ff3333'; // Red for error
-            
-            setTimeout(() => {
-                button.classList.remove('clicked');
-                button.style.backgroundColor = ''; // Reset to default blue
-            }, 1000);
-        }
-    });
-
-    // Download button click handler
-    downloadBtn.addEventListener('click', async function() {
-        try {
-            // Get latest transcript
-            const stored = await chrome.storage.local.get(null);
-            const transcripts = Object.entries(stored)
-                .filter(([key]) => key.startsWith('transcript_'))
-                .sort((a, b) => b[1].timestamp - a[1].timestamp);
-
-            if (transcripts.length === 0) {
-                throw new Error('No transcript available');
-            }
-
-            // Format transcript for download
-            const [key, latestTranscript] = transcripts[0];
-            const { segments, videoTitle } = latestTranscript;
-            let transcriptText = '';
-            segments.forEach(segment => {
-                transcriptText += `${segment.timestamp} ${segment.text}\n`;
-            });
-
-            // Create and trigger download
-            const blob = new Blob([transcriptText], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${videoTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_transcript.txt`;
-            a.click();
-            URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error('Error downloading transcript:', error);
-        }
     });
 });
