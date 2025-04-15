@@ -86,7 +86,7 @@ export const config = {
   // OpenAI settings
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
-    defaultModel: ['gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo'].includes(process.env.OPENAI_MODEL) 
+    defaultModel: ['gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo', 'gpt-4-0125-mini'].includes(process.env.OPENAI_MODEL) 
       ? process.env.OPENAI_MODEL 
       : 'gpt-4-turbo-preview',
     embeddingModel: process.env.OPENAI_EMBEDDING_MODEL === 'text-embedding-3-small' 
