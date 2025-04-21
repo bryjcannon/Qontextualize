@@ -86,11 +86,11 @@ export const config = {
   // OpenAI settings
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
-    defaultModel: ['gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo', 'gpt-4-0125-mini'].includes(process.env.OPENAI_MODEL) 
+    defaultModel: ['gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo', 'gpt-4.1-mini'].includes(process.env.OPENAI_MODEL) 
       ? process.env.OPENAI_MODEL 
       : 'gpt-4-turbo-preview',
-    embeddingModel: process.env.OPENAI_EMBEDDING_MODEL === 'text-embedding-3-small' 
-      ? 'text-embedding-3-small' 
+    embeddingModel: ['text-embedding-3-small', 'text-embedding-3-large'].includes(process.env.OPENAI_EMBEDDING_MODEL)
+      ? process.env.OPENAI_EMBEDDING_MODEL
       : 'text-embedding-ada-002',
     maxRetries: Math.min(Math.max(parseInt(process.env.OPENAI_MAX_RETRIES) || 3, 0), 5),
     retryDelay: Math.min(Math.max(parseInt(process.env.OPENAI_RETRY_DELAY) || 1000, 100), 10000),

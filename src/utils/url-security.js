@@ -32,6 +32,7 @@ const ALLOWED_DOMAINS = new Set([
   "oxfordjournals.org",
   "emerald.com",
   "degruyter.com",
+  "frontiersin.org"
 
   // Preprint & Open Access
   "arxiv.org",
