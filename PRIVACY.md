@@ -23,7 +23,7 @@ Qontextualize ("we", "our", or "the extension") is committed to protecting your 
 
 3. **Server Logs**
    - Standard server access logs
-   - Contains IP addresses
+   - Contains IP addresses (for rate limiting purposes only)
    - Automatically deleted after 24 hours
    - Used only for security and debugging
 
