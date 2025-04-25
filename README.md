@@ -65,6 +65,7 @@ In an era of information overload, distinguishing fact from fiction has become i
 - No personal data collection
 - Local processing where possible
 - Secure API communications
+- See [Privacy Policy](PRIVACY.md) for more details
 
 ## 🛠️ Technical Requirements
 
@@ -88,12 +89,6 @@ We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING
 
 MIT License - See LICENSE file for details
 
-## Privacy
-
-- No personal data collection
-- Local processing where possible
-- Secure API communications
-- See [Privacy Policy](PRIVACY.md) for more details
 
 ## 🙏 Acknowledgments
 
